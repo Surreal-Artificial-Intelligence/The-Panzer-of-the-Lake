@@ -1,8 +1,8 @@
-# Sensei
+# Panzer of the Lake
 
 [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
 
-Sensei is a chat interface that can be used with any _Large Language Model (LLM)_.
+POTL is a chat interface that can be used with any _Large Language Model (LLM)_.
 
 ## Features
 
@@ -29,15 +29,15 @@ Clone the repository, go into the repository directory, and then initialise the
 Python virtual environment.
 
 ```bash
-git clone git@gitlab.com:helix-haven-holdings/surreal-ai/sensei.git
-cd sensei
+git clone https://github.com/Surreal-Artificial-Intelligence/The-Panzer-of-the-Lake.git
+cd The-Panzer-of-the-Lake
 pipenv shell
 pipenv install
 ```
 
 ## Use
 
-To launch Sensei, simply run:
+To launch POTL, simply run:
 
 ```bash
 streamlit run home.py
