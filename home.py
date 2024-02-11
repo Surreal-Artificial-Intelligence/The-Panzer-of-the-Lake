@@ -1,17 +1,23 @@
 import json
 import requests
 import numpy as np
+
+
+from open_ai_model import OpenAIModel
+from openai_azure_model import OpenAIAzureModel
+from custom_large_language_model import CustomLargeLanguageModel
+from xtts_v2_model import XTTSV2Model
+
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
-from utils import (
+from st_utils import (
     save_chats_to_file,
     load_chats,
-    continue_conversation,
-    log_retries
 )
 
+
 st.set_page_config(
-    page_title="Sensei",
+    page_title="POTL",
     layout="wide",
     initial_sidebar_state="auto",
     menu_items={"about": "Built by Surreal AI"}
@@ -69,6 +75,34 @@ def set_session_variables() -> None:
 set_session_variables()
 
 
+@st.cache_resource
+def get_openai_connection():
+    client = OpenAIModel(api_key=st.secrets['OPENAI_API_KEY'], model_name="gpt-3.5-turbo-0613")
+    return client
+
+
+@st.cache_resource
+def get_openai_azure_connection():
+    client = OpenAIAzureModel(api_key=st.secrets['OPENAI_AZURE_API_KEY'], )
+    return client
+
+
+@st.cache_resource
+def get_custom_llm_connection():
+    url = "http://localhost:11434/api/generate"
+
+    client = local_model(url)
+    return client
+
+
+@st.cache_resource
+def get_custom_tts_connection():
+    url = "http://localhost:11434/api/generate"
+
+    client = local_model(url)
+    return client
+
+
 def quicksave_chat():
     """
     Saves the current chat that is in chat history into the all user chats variable. 
@@ -84,9 +118,26 @@ def quicksave_chat():
                 break
 
 
+def reset_stats():
+    st.session_state["total_tokens_used"] = 0
+
+
+def render_chats():
+    chat_container.empty()
+    with chat_container:
+        for item in st.session_state["chat_history"]["content"][1:]:
+            if item["role"] == 'assistant':
+                with st.chat_message(item["role"], avatar='./tankfinal2.png'):
+                    st.markdown(item['content'])
+            else:
+                with st.chat_message(item["role"]):
+                    st.markdown(item['content'])
+
+
 def populate_chats(user_chats):
     def load_conversation(i: int):
         st.session_state["chat_history"] = user_chats["chats"][i]
+        render_chats()
 
     def delete_conversation(i: int):
         del user_chats["chats"][i]
@@ -98,17 +149,18 @@ def populate_chats(user_chats):
         with chat_tile_container:
             if item:
                 colored_header(
-                    label=" ",
+                    label="",
                     description=item["content"][1]["content"][:70],
                     color_name="blue-green-70"
                 )
-            col_load.button("Load", on_click=load_conversation, args=(i,), key=i)
-            col_delete.button("Delete", on_click=delete_conversation, args=(i,), key=i+10000)
+                col_load.button("Load", on_click=load_conversation, args=(i,), key=i, use_container_width=True)
+                col_delete.button("🗑", on_click=delete_conversation, args=(i,), key=i+10000, use_container_width=True)
 
 
 voice_enabled = False
 with st.sidebar:
     voice_enabled = st.checkbox("Voice")
+    open_ai = st.checkbox("Open AI")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
         st.markdown("# Hyperparameters")
@@ -130,23 +182,8 @@ with st.sidebar:
         populate_chats(st.session_state["chats"])
 
 
-# @st.cache_resource
-# def instantiate_model():
-#     if st.session_state["model"] is None or st.session_state["model"] == "":
-#         st.session_state["model"] = LLModel()
-
-#     return st.session_state["model"]
-
-
-url = "http://localhost:11434/api/generate"
-api_url = "http://localhost:8000/text-to-speech"
-
-headers = {
-    'Content-Type': 'application/json',
-}
-
-
 def query_text_to_speech_api(text: str, lang: str = 'en'):
+    api_url = "http://localhost:8000/text-to-speech"
     try:
         # Sending a POST request
         data = {
@@ -172,24 +209,10 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
         print(f"Exception: {str(e)}")
 
 
-def generate_response(prompt):
-
-    data = {
-        "model": "mistral",
-        "stream": False,
-        "prompt": prompt,
-    }
-
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-
-    if response.status_code == 200:
-        response_text = response.text
-        data = json.loads(response_text)
-        actual_response = data["response"]
-        return actual_response
-    else:
-        print("Error:", response.status_code, response.text)
-        return None
+def generate_response(messages):
+    if open_ai:
+        client = get_openai_connection()
+        return client.chat(messages)
 
 
 def process_query(query_str: str) -> None:
@@ -200,45 +223,33 @@ def process_query(query_str: str) -> None:
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
-            final_prompt = query_str
-
-            st.session_state["chat_history"]["content"].append({'role': 'user', 'content': final_prompt})
-            response = generate_response(final_prompt)
-
+            prompt = query_str
+            st.session_state["chat_history"]["content"].append({'role': 'user', 'content': prompt})
+            render_chats()
+            response = generate_response(st.session_state["chat_history"]["content"])
+            text_response = response.choices[0].message.content
             # Add output to chat history
-            st.session_state["chat_history"]["content"].append({'role': 'assistant', 'content': response})
+            st.session_state["chat_history"]["content"].append({'role': 'assistant', 'content': text_response})
+            st.session_state["total_tokens_used"] = response.usage.total_tokens
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
+
             if voice_enabled:
                 status.update(label="Weaving resonance...", state="running", expanded=False)
-                return query_text_to_speech_api(text=response)
+                return query_text_to_speech_api(text=text_response)
             else:
-                return response
-
-
-chat_container.empty()
-
-with chat_container:
-    for i, item in enumerate(st.session_state["chat_history"]["content"]):
-        if i == 0:
-            continue
-        if item["role"] == 'assistant':
-            with st.chat_message(item["role"], avatar='./tankfinal2.png'):
-                st.markdown(item['content'])
-        else:
-            with st.chat_message(item["role"]):
-                st.markdown(item['content'])
+                return text_response
 
 
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
-    st.chat_message('user').write(query)
+    # st.chat_message('user').write(query)
     full_response = ""
+
+    response = process_query(query)
     if voice_enabled:
-        response_audio = process_query(query)
         with st.chat_message('ai', avatar='./tankfinal2.png'):
             st.write("The panzer speaks...")
-            st.audio(response_audio, format='audio/wav', sample_rate=24000)
+            st.audio(response, format='audio/wav', sample_rate=24000)
     else:
-        response_text = process_query(query)
-        st.chat_message('ai', avatar='./tankfinal2.png').write(response_text)
+        st.chat_message('ai', avatar='./tankfinal2.png').write(response)
         st.write("Total tokens:", st.session_state["total_tokens_used"])
