@@ -1,7 +1,5 @@
 import time
-from typing import Dict
 import json
-import random
 import requests
 from model_utils import calculate_sleep_time, log_retries
 
@@ -14,7 +12,7 @@ class OllamaModel:
     def test_connection(self):
         pass
 
-    def chat(self, message, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
+    def chat(self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
              max_delay=64, on_retry=None, **kwargs) -> str:
         """
         Sends a request to the model with exponential backoff retry policy.
@@ -43,7 +41,7 @@ class OllamaModel:
             The response from the model.
         """
 
-        message = message[-1]['content']
+        # message = message[-1]['content']
         # [{'role': 'system', 'content': 'You are an AI assistant'}, {'role': 'user', 'content': 'Test'}]
         retries = 0
 
@@ -52,7 +50,7 @@ class OllamaModel:
                 data = {
                     "model": self.model_name,
                     "stream": False,
-                    "prompt": message,
+                    "messages": messages[1:],  # does not have system role
                 }
 
                 headers = {
@@ -64,8 +62,7 @@ class OllamaModel:
                 if response.status_code == 200:
                     response_text = response.text
                     data = json.loads(response_text)
-                    actual_response = data["response"]
-                    return actual_response
+                    return data
                 else:
                     print("Error:", response.status_code, response.text)
                     return None
@@ -74,9 +71,7 @@ class OllamaModel:
                 if retries == max_retries - 1:
                     raise e_rror  # Raise the exception if max_retries reached
                 else:
-                    sleep_time = self.calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
-                    if on_retry is not None:
-                        # Execute the on_retry callback, if provided
-                        on_retry(retries, sleep_time, e_rror)
+                    sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
+                    print(log_retries(retries, sleep_time, e_rror))
                     time.sleep(sleep_time)  # Sleep before retrying
                     retries += 1

@@ -1,0 +1,1 @@
+SUPPORTED_MODELS = ("openAI", "azure", "mistral", "samantha-mistral")

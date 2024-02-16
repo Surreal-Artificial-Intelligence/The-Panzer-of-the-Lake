@@ -154,42 +154,55 @@ def format_knowledge(vector_results):
     return knowledge_elements
 
 
+def is_json_file_empty(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            return not bool(data)  # Check if the loaded data is empty
+    except (json.JSONDecodeError, FileNotFoundError):
+        return True  
+
+
+def write_dummy_data(file_path: str, user: str):
+    dummy_data = {
+        "user": f"{user}",
+        "chats": [
+            {
+                "title": "",
+                "content": [
+                    {
+                        "role": "system",
+                        "content": "You are an AI assistant"
+                    },
+                    {
+                        "role": "user",
+                        "content": "hello, tell me about chats"
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Hello! Chats are chats, come now?"
+                    }
+                ]
+            }
+        ]
+    }
+    with open(file_path, "w") as f:
+        f.write(json.dumps(dummy_data))
+
+
 def load_chats(user: str):
     file_name = f"./chats/{user}.json"
-    # Check if the file exists
-    if not os.path.exists(file_name):
-        # If not, create it with the basic structure
-        data = {
-            "user": f"{user}",
-            "chats": [
-                {
-                    "title": "",
-                    "content": [
-                        {
-                            "role": "system",
-                            "content": "You are an AI assistant"
-                        },
-                        {
-                            "role": "user",
-                            "content": "hello, tell me about chats"
-                        },
-                        {
-                            "role": "assistant",
-                            "content": "Hello! Chats are chats, come now?"
-                        }
-                    ]
-                }
-            ]
-        }
 
-        with open(file_name, "w") as f:
-            f.write(json.dumps(data))
+    # If the file exists, read the dictionary from the text file
+    if os.path.exists(file_name):
+        # Check if file is empty
+        if is_json_file_empty(file_name):
+            write_dummy_data(file_name, user)
     else:
-        # If the file exists, read the dictionary from the text file
-        with open(file_name, "r") as f:
-            data = json.loads(f.read())
-            # print(data)
+        write_dummy_data(file_name, user)
 
+    with open(file_name, "r") as f:
+        data = json.loads(f.read())
     return data
 
 
