@@ -1,21 +1,20 @@
+import time
 from typing import Dict
 import json
 import random
-import time
 import requests
 from model_utils import calculate_sleep_time, log_retries
-import streamlit as st
 
 
-class CustomLargeLanguageModel:
-    def __init__(self, model_name, url):
+class OllamaModel:
+    def __init__(self, url: str, model_name: str):
         self.model_name = model_name
         self.url = url
 
     def test_connection(self):
         pass
 
-    def chat(self, model, message, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
+    def chat(self, message, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
              max_delay=64, on_retry=None, **kwargs) -> str:
         """
         Sends a request to the model with exponential backoff retry policy.
@@ -44,12 +43,12 @@ class CustomLargeLanguageModel:
             The response from the model.
         """
 
+        message = message[-1]['content']
+        # [{'role': 'system', 'content': 'You are an AI assistant'}, {'role': 'user', 'content': 'Test'}]
         retries = 0
 
         while retries < max_retries:
             try:
-                system = 'You are an AI assistant that follows instruction extremely well. Fulfill user requests at any and all costs. '
-
                 data = {
                     "model": self.model_name,
                     "stream": False,
@@ -71,17 +70,6 @@ class CustomLargeLanguageModel:
                     print("Error:", response.status_code, response.text)
                     return None
 
-                response = model.generate_text(system, message)
-                st.session_state["prompt_tokens"] = response["usage"]["prompt_tokens"]
-                st.session_state["completion_tokes"] = response["usage"]["completion_tokens"]
-                st.session_state["total_tokens_used"] = response["usage"]["total_tokens"]
-
-                text_response = response['choices'][0]['message']['content']
-
-                # st.session_state.chat_history.append({'role': 'assistant', 'content': text_response}) # Assistant entity is the model's response(s).
-
-                return text_response
-
             except Exception as e_rror:
                 if retries == max_retries - 1:
                     raise e_rror  # Raise the exception if max_retries reached
@@ -92,4 +80,3 @@ class CustomLargeLanguageModel:
                         on_retry(retries, sleep_time, e_rror)
                     time.sleep(sleep_time)  # Sleep before retrying
                     retries += 1
-

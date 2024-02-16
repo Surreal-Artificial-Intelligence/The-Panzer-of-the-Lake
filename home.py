@@ -2,11 +2,10 @@ import json
 import requests
 import numpy as np
 
-
+from ollama_model import OllamaModel
 from open_ai_model import OpenAIModel
 from openai_azure_model import OpenAIAzureModel
-from custom_large_language_model import CustomLargeLanguageModel
-from xtts_v2_model import XTTSV2Model
+# from xtts_v2_model import XTTSV2Model
 
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
@@ -23,9 +22,10 @@ st.set_page_config(
     menu_items={"about": "Built by Surreal AI"}
 )
 
-colored_header(label="Panzer of the Lake", description="Welcome to the lake,"
-               " ask your question so the Panzer may answer it.",
-               color_name="blue-green-70")
+colored_header(label="Panzer of the Lake",
+               description="Welcome to the lake ask your question so the Panzer may answer it.",
+               color_name="blue-green-70"
+               )
 
 
 # Utility Functions
@@ -88,10 +88,8 @@ def get_openai_azure_connection():
 
 
 @st.cache_resource
-def get_custom_llm_connection():
-    url = "http://localhost:11434/api/generate"
-
-    client = local_model(url)
+def get_ollama_connection(url: str = "http://localhost:11434/api/generate", model_name: str = "mistral"):
+    client = OllamaModel(url, model_name)
     return client
 
 
@@ -157,6 +155,11 @@ def populate_chats(user_chats):
                 col_delete.button("🗑", on_click=delete_conversation, args=(i,), key=i+10000, use_container_width=True)
 
 
+def update_chat_history(role: str, text_response: str):
+    st.session_state["chat_history"]["content"].append({'role': role, 'content': text_response})
+    return
+
+
 voice_enabled = False
 with st.sidebar:
     voice_enabled = st.checkbox("Voice")
@@ -212,25 +215,33 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
 def generate_response(messages):
     if open_ai:
         client = get_openai_connection()
-        return client.chat(messages)
+    else:
+        client = get_ollama_connection()
+
+    return client.chat(messages)
 
 
-def process_query(query_str: str) -> None:
+def process_query(query: str) -> None:
 
-    if not query_str:
-        st.error("Please enter a question.")
-        return
+    # if not query_str:
+    #     st.error("Please enter a question.")
+    #     return
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
-            prompt = query_str
-            st.session_state["chat_history"]["content"].append({'role': 'user', 'content': prompt})
+
+            update_chat_history("user", query)
             render_chats()
+
             response = generate_response(st.session_state["chat_history"]["content"])
-            text_response = response.choices[0].message.content
-            # Add output to chat history
-            st.session_state["chat_history"]["content"].append({'role': 'assistant', 'content': text_response})
-            st.session_state["total_tokens_used"] = response.usage.total_tokens
+
+            if not open_ai:
+                text_response = response
+            else:
+                text_response = response.choices[0].message.content
+                st.session_state["total_tokens_used"] = response.usage.total_tokens
+
+            update_chat_history("assistant", text_response)
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
 
