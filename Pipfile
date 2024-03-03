@@ -14,6 +14,9 @@ sentence-transformers = "*"
 accelerate = "*"
 streamlit = "*"
 openai = "*"
+llama-index = "*"
+langchain = "*"
+pypdf = "*"
 
 [dev-packages]
 

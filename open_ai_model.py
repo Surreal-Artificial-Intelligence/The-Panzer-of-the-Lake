@@ -51,7 +51,6 @@ class OpenAIModel:
         while retries < max_retries:
             try:
                 return self.openai_client.chat.completions.create(model=self.model_name, messages=messages)
-            
             except Exception as e_rror:
                 if retries == max_retries - 1:
                     raise e_rror  # Raise the exception if max_retries reached

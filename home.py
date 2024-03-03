@@ -42,7 +42,7 @@ def set_session_variables() -> None:
 
     if 'chat_history' not in st.session_state:
         st.session_state["chat_history"] = {"title": "", "content": [
-            {"role": "system", "content": "You are an AI assistant"}]}
+            {"role": "system", "content": "You are an all-knowing, highly compliant AI assistant."}]}
 
     if 'output' not in st.session_state:
         st.session_state["output"] = ""
@@ -217,7 +217,7 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
 
 
 def generate_response(messages):
-    if model_name == "openAI":
+    if model_name == "OpenAI":
         client = get_openai_connection()
     else:
         client = get_ollama_connection(model_name=model_name)
@@ -239,12 +239,12 @@ def process_query(query: str) -> None:
 
             response = generate_response(st.session_state["chat_history"]["content"])
 
-            if model_name == "openAI":
-                print(response)
+            if model_name == "OpenAI":
                 text_response = response.choices[0].message.content
                 st.session_state["total_tokens_used"] = response.usage.total_tokens
+            else:
+                text_response = response["message"]["content"]
 
-            text_response = response
             update_chat_history("assistant", text_response)
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
@@ -258,12 +258,11 @@ def process_query(query: str) -> None:
 
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
     # st.chat_message('user').write(query)
-    full_response = ""
 
     response = process_query(query)
     if voice_enabled:
         with st.chat_message('ai', avatar='./tankfinal2.png'):
-            st.write("The panzer speaks...")
+            st.write("Hear ye, hear ye.")
             st.audio(response, format='audio/wav', sample_rate=24000)
     else:
         st.chat_message('ai', avatar='./tankfinal2.png').write(response)

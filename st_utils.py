@@ -160,7 +160,7 @@ def is_json_file_empty(file_path):
             data = json.load(file)
             return not bool(data)  # Check if the loaded data is empty
     except (json.JSONDecodeError, FileNotFoundError):
-        return True  
+        return True
 
 
 def write_dummy_data(file_path: str, user: str):

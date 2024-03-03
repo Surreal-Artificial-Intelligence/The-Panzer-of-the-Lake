@@ -45,5 +45,4 @@ streamlit run home.py
 
 ## Authors
 
-- [@bkmwatling](https://www.gitlab.com/bkmwatling)
 - [@EJonkers](https://www.gitlab.com/EJonkers)

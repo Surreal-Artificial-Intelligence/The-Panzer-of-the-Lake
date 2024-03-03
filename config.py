@@ -1,1 +1,1 @@
-SUPPORTED_MODELS = ("openAI", "azure", "mistral", "samantha-mistral")
+SUPPORTED_MODELS = ("OpenAI", "Azure", "mistral", "samantha-mistral")
