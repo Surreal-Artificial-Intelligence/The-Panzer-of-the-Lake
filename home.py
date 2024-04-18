@@ -84,7 +84,10 @@ def get_openai_connection():
 
 @st.cache_resource
 def get_openai_azure_connection():
-    client = OpenAIAzureModel(api_key=st.secrets['OPENAI_AZURE_API_KEY'], )
+    client = OpenAIAzureModel(api_key=st.secrets['AZURE_OPENAI_API_KEY'],
+                              api_version=st.secrets['AZURE_API_VERSION'],
+                              azure_endpoint=st.secrets['AZURE_OPENAI_BASE'],
+                              model_name=st.secrets['AZURE_OPENAI_DEPLOYMENT'])
     return client
 
 
@@ -219,6 +222,8 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
 def generate_response(messages):
     if model_name == "OpenAI":
         client = get_openai_connection()
+    elif model_name == "Azure":
+        client = get_openai_azure_connection()
     else:
         client = get_ollama_connection(model_name=model_name)
 
@@ -237,13 +242,13 @@ def process_query(query: str) -> None:
             update_chat_history("user", query)
             render_chats()
 
-            response = generate_response(st.session_state["chat_history"]["content"])
+            chat_response = generate_response(st.session_state["chat_history"]["content"])
 
-            if model_name == "OpenAI":
-                text_response = response.choices[0].message.content
-                st.session_state["total_tokens_used"] = response.usage.total_tokens
+            if model_name == "OpenAI" or model_name == 'Azure':
+                text_response = chat_response.choices[0].message.content
+                st.session_state["total_tokens_used"] = chat_response.usage.total_tokens
             else:
-                text_response = response["message"]["content"]
+                text_response = chat_response["message"]["content"]
 
             update_chat_history("assistant", text_response)
             quicksave_chat()

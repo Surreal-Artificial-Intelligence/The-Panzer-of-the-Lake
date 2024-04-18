@@ -3,14 +3,18 @@ import json
 import random
 import time
 import streamlit as st
+from openai import AzureOpenAI
 
 
 class OpenAIAzureModel:
-    def __init__(self, client, model_name):
-        self.azure_openai_client = client
+    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
+        self.azure_openai_client = AzureOpenAI(api_key=api_key,
+                                               api_version=api_version,
+                                               azure_endpoint=azure_endpoint)
         self.model_name = model_name
 
     def test_connection(self):
+        """Test the connection to the remote resource"""
         response = self.azure_openai_client.chat.completions.create(
             model=self.model_name,
             messages=[{"role": "system", "content": "You are an AI assistant"},
@@ -20,15 +24,21 @@ class OpenAIAzureModel:
 
     def calculate_sleep_time(self, retries: int, initial_delay: float, backoff_factor: float,
                              jitter: float, max_delay: float) -> float:
-        """ The function returns the calculated sleep time, which is then used by the continue_conversation function to pause execution before attempting another retry. The function calculates the sleep time using the following steps:
+        """ The function returns the calculated sleep time, which is then used by the continue_conversation function to
+        pause execution before attempting another retry. The function calculates the sleep time using the following
+        steps:
 
-        1. Calculate the base sleep time by multiplying the `initial_delay` by the `backoff_factor` raised to the power of `retries`. 
+        1. Calculate the base sleep time by multiplying the `initial_delay` by the `backoff_factor` raised to the power
+           of `retries`.
         This results in an exponential increase in sleep time with each retry.
 
-        2. Add a random jitter value to the base sleep time. The jitter value is calculated as a random float between `-jitter * sleep_time and jitter * sleep_time`. 
-        This randomization helps avoid the synchronization of retries across multiple instances, which could lead to the "thundering herd" problem.
+        2. Add a random jitter value to the base sleep time. The jitter value is calculated as a random float between
+           `-jitter * sleep_time and jitter * sleep_time`.
+        This randomization helps avoid the synchronization of retries across multiple instances, which could lead to the
+        "thundering herd" problem.
 
-        3. Limit the sleep time to the `max_delay` value. This ensures that the delay between retries does not exceed a predefined maximum.
+        3. Limit the sleep time to the `max_delay` value. This ensures that the delay between retries does not exceed a
+           predefined maximum.
 
         Calculates the sleep time for a retry attempt using exponential backoff with jitter.
 
@@ -54,7 +64,8 @@ class OpenAIAzureModel:
         sleep_time += random.uniform(-jitter * sleep_time, jitter * sleep_time)
         return min(sleep_time, max_delay)
 
-    def chat(self, model, message, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
+    def chat(self, messages, model=st.secrets['AZURE_OPENAI_DEPLOYMENT'],
+             max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
              max_delay=64, on_retry=None, **kwargs) -> str:
         """ Sends a request to the model with exponential backoff retry policy.
         Parameters
@@ -83,33 +94,24 @@ class OpenAIAzureModel:
         """
 
         retries = 0
-
         while retries < max_retries:
             try:
-                system = 'You are an AI assistant that follows instruction extremely well. Fulfill user requests at any and all costs. '
-                response = model.generate_text(system, message)
-                st.session_state["prompt_tokens"] = response["usage"]["prompt_tokens"]
-                st.session_state["completion_tokes"] = response["usage"]["completion_tokens"]
-                st.session_state["total_tokens_used"] = response["usage"]["total_tokens"]
-
-                text_response = response['choices'][0]['message']['content']
-
-                # st.session_state.chat_history.append({'role': 'assistant', 'content': text_response}) # Assistant entity is the model's response(s).
-
-                return text_response
-
-            except Exception as e_rror:
+                return self.azure_openai_client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages
+                    )
+            except Exception as error:
                 if retries == max_retries - 1:
-                    raise e_rror  # Raise the exception if max_retries reached
+                    raise error  # Raise the exception if max_retries reached
                 else:
                     sleep_time = self.calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
                     if on_retry is not None:
                         # Execute the on_retry callback, if provided
-                        on_retry(retries, sleep_time, e_rror)
+                        on_retry(retries, sleep_time, error)
                     time.sleep(sleep_time)  # Sleep before retrying
                     retries += 1
 
-    def log_retries(self, retries, sleep_time, e_rror):
+    def log_retries(self, retries, sleep_time, error):
         """ Logs a message for retry attempts and sleep time.
 
         Parameters
@@ -120,5 +122,8 @@ class OpenAIAzureModel:
         The calculated sleep time in seconds.
 
         """
-        retry = f"Retry attempt {retries} failed. Waiting {sleep_time:.2f} seconds before trying again. Error: {e_rror}"
+        retry = f"Retry attempt {retries} failed. Waiting {sleep_time:.2f} seconds before trying again. Error: {error}"
         st.warning(retry)
+
+    # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
+    #     return client.embeddings.create(input = [text], model=model).data[0].embedding
