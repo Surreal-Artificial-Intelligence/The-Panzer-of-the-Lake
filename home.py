@@ -2,14 +2,17 @@ import json
 import requests
 import numpy as np
 
+import streamlit as st
+from streamlit_extras.colored_header import colored_header
+
 from ollama_model import OllamaModel
 from open_ai_model import OpenAIModel
 from openai_azure_model import OpenAIAzureModel
 # from xtts_v2_model import XTTSV2Model
 
 from config import SUPPORTED_MODELS
-import streamlit as st
-from streamlit_extras.colored_header import colored_header
+
+
 from st_utils import (
     save_chats_to_file,
     load_chats,
@@ -39,6 +42,7 @@ side_chats_container.empty()
 
 
 def set_session_variables() -> None:
+    """Initializes session variables"""
 
     if 'chat_history' not in st.session_state:
         st.session_state["chat_history"] = {"title": "", "content": [
@@ -60,17 +64,17 @@ def set_session_variables() -> None:
         st.session_state["model"] = None
 
     if 'hyperparameters' not in st.session_state:
-        temp = 0.5
-        max_t = 5000
-        top_p = 0.95
-        f_pen = 0.0
-        p_pen = 0.0
+        temperature = 0.5
+        max_token = 5000
+        top_prob = 0.95
+        frequency_penalty = 0.0
+        presence_penalty = 0.0
         st.session_state["hyperparameters"] = {
-            "temperature": temp,
-            "max_tokens": max_t,
-            "top_p": top_p,
-            "frequency_penalty": f_pen,
-            "presence_penalty": p_pen}
+            "temperature": temperature,
+            "max_tokens": max_token,
+            "top_p": top_prob,
+            "frequency_penalty": frequency_penalty,
+            "presence_penalty": presence_penalty}
 
 
 set_session_variables()
@@ -78,12 +82,14 @@ set_session_variables()
 
 @st.cache_resource
 def get_openai_connection():
+    """Instantiate and return the OpenAI model client"""
     client = OpenAIModel(api_key=st.secrets['OPENAI_API_KEY'], model_name="gpt-3.5-turbo-0613")
     return client
 
 
 @st.cache_resource
 def get_openai_azure_connection():
+    """Instantiate and return the AzureOpenAI model client"""
     client = OpenAIAzureModel(api_key=st.secrets['AZURE_OPENAI_API_KEY'],
                               api_version=st.secrets['AZURE_API_VERSION'],
                               azure_endpoint=st.secrets['AZURE_OPENAI_BASE'],
@@ -92,22 +98,23 @@ def get_openai_azure_connection():
 
 
 @st.cache_resource
-def get_ollama_connection(url: str = "http://localhost:11434/api/chat", model_name: str = "mistral"):
-    client = OllamaModel(url, model_name)
+def get_ollama_connection(url: str = "http://localhost:11434/api/chat",
+                          model_label: str = "mistral"):
+    """Instantiate and return the Ollama model client"""
+    client = OllamaModel(url, model_label)
     return client
 
 
-@st.cache_resource
-def get_custom_tts_connection():
-    url = "http://localhost:11434/api/generate"
-
-    client = local_model(url)
-    return client
+# @st.cache_resource
+# def get_custom_tts_connection():
+#     url = "http://localhost:11434/api/generate"
+#     client = local_model(url)
+#     return client
 
 
 def quicksave_chat():
     """
-    Saves the current chat that is in chat history into the all user chats variable. 
+    Saves the current chat that is in chat history into the all user chats variable.
     Basically a quicksave function.
     """
     if st.session_state["chat_history"] not in st.session_state["chats"]["chats"]:
@@ -121,10 +128,12 @@ def quicksave_chat():
 
 
 def reset_stats():
+    """Sets chat statistics to zero"""
     st.session_state["total_tokens_used"] = 0
 
 
 def render_chats():
+    """Renders chats in bubbles in the UI"""
     chat_container.empty()
     with chat_container:
         for item in st.session_state["chat_history"]["content"][1:]:
@@ -137,6 +146,7 @@ def render_chats():
 
 
 def populate_chats(user_chats):
+    """Loads conversation from file memory"""
     def load_conversation(i: int):
         st.session_state["chat_history"] = user_chats["chats"][i]
         render_chats()
@@ -160,6 +170,7 @@ def populate_chats(user_chats):
 
 
 def update_chat_history(role: str, text_response: str):
+    """Appends new content to the chat history session variable"""
     st.session_state["chat_history"]["content"].append({'role': role, 'content': text_response})
     return
 
@@ -193,6 +204,7 @@ with st.sidebar:
 
 
 def query_text_to_speech_api(text: str, lang: str = 'en'):
+    """Gets speech audio from tts endpoint"""
     api_url = "http://localhost:8000/text-to-speech"
     try:
         # Sending a POST request
@@ -201,45 +213,44 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
             "lang": lang
         }
 
-        response = requests.post(api_url, headers=headers, json=data)
+        tts_response = requests.post(api_url, headers="headerss", json=data)
 
-        if response.status_code == 200:
+        if tts_response.status_code == 200:
 
             # Decode the binary data to a string
-            json_string = response.content.decode('utf-8')
+            json_string = tts_response.content.decode('utf-8')
             # print(json_string)
             # Convert the JSON string to a Python list
             audio_list = json.loads(json_string)
             audio_array = np.array(audio_list)
             return audio_array
         else:
-            print(f"Error: {response.status_code} - {response.text}")
+            print(f"Error: {tts_response.status_code} - {tts_response.text}")
     except Exception as e:
         # Print an error message in case of an exception
         print(f"Exception: {str(e)}")
 
 
 def generate_response(messages):
+    """Calls a specific model client to get a response"""
+
     if model_name == "OpenAI":
         client = get_openai_connection()
     elif model_name == "Azure":
         client = get_openai_azure_connection()
     else:
-        client = get_ollama_connection(model_name=model_name)
+        client = get_ollama_connection(model_label=model_name)
 
     return client.chat(messages)
 
 
-def process_query(query: str) -> None:
-
-    # if not query_str:
-    #     st.error("Please enter a question.")
-    #     return
+def process_query(query_string: str) -> None:
+    """Handles user input"""
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
 
-            update_chat_history("user", query)
+            update_chat_history("user", query_string)
             render_chats()
 
             chat_response = generate_response(st.session_state["chat_history"]["content"])
