@@ -41,7 +41,7 @@ side_chats_container = st.container()
 side_chats_container.empty()
 
 
-def set_session_variables() -> None:
+def initialize_session_variables() -> None:
     """Initializes session variables"""
 
     if 'chat_history' not in st.session_state:
@@ -77,7 +77,7 @@ def set_session_variables() -> None:
             "presence_penalty": presence_penalty}
 
 
-set_session_variables()
+initialize_session_variables()
 
 
 @st.cache_resource
@@ -181,7 +181,6 @@ with st.sidebar:
     model_name = st.selectbox('Model:', SUPPORTED_MODELS)
     st.divider()
     voice_enabled = st.checkbox("Voice")
-    open_ai = st.checkbox("Open AI")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
         st.markdown("# Hyperparameters")
@@ -219,7 +218,6 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
 
             # Decode the binary data to a string
             json_string = tts_response.content.decode('utf-8')
-            # print(json_string)
             # Convert the JSON string to a Python list
             audio_list = json.loads(json_string)
             audio_array = np.array(audio_list)
