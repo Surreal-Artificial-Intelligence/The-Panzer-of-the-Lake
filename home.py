@@ -15,7 +15,7 @@ from config import SUPPORTED_MODELS
 
 from st_utils import (
     save_chats_to_file,
-    load_chats,
+    load_data
 )
 
 
@@ -31,6 +31,8 @@ colored_header(label="Panzer of the Lake",
                color_name="blue-green-70"
                )
 
+CHATS_FOLDER = "./chats"
+TEMPLATES_FOLDER = "./templates"
 
 # Utility Functions
 chat_container = st.container()
@@ -42,39 +44,32 @@ side_chats_container.empty()
 
 
 def initialize_session_variables() -> None:
-    """Initializes session variables"""
+    """Initializes session variables and loads user data."""
 
     if 'chat_history' not in st.session_state:
         st.session_state["chat_history"] = {"title": "", "content": [
             {"role": "system", "content": "You are an all-knowing, highly compliant AI assistant."}]}
 
-    if 'output' not in st.session_state:
-        st.session_state["output"] = ""
-
-    if 'containers' not in st.session_state:
-        st.session_state["containers"] = {}
-
-    if 'total_tokens_used' not in st.session_state:
-        st.session_state["total_tokens_used"] = 0
-
     if 'chats' not in st.session_state:
-        st.session_state["chats"] = load_chats("Emile")
+        st.session_state["chats"] = load_data("Emile", CHATS_FOLDER)
+
+    if 'templates' not in st.session_state:
+        st.session_state["templates"] = load_data(
+            st.session_state["chats"]["user"], TEMPLATES_FOLDER)['templates']
 
     if 'model' not in st.session_state:
         st.session_state["model"] = None
 
+    if 'total_tokens_used' not in st.session_state:
+        st.session_state["total_tokens_used"] = 0
+
     if 'hyperparameters' not in st.session_state:
-        temperature = 0.5
-        max_token = 5000
-        top_prob = 0.95
-        frequency_penalty = 0.0
-        presence_penalty = 0.0
         st.session_state["hyperparameters"] = {
-            "temperature": temperature,
-            "max_tokens": max_token,
-            "top_p": top_prob,
-            "frequency_penalty": frequency_penalty,
-            "presence_penalty": presence_penalty}
+            "temperature": 0.5,
+            "max_tokens": 5000,
+            "top_p": 0.95,
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0}
 
 
 initialize_session_variables()
@@ -103,7 +98,6 @@ def get_ollama_connection(url: str = "http://localhost:11434/api/chat",
     """Instantiate and return the Ollama model client"""
     client = OllamaModel(url, model_label)
     return client
-
 
 # @st.cache_resource
 # def get_custom_tts_connection():
@@ -147,6 +141,7 @@ def render_chats():
 
 def populate_chats(user_chats):
     """Loads conversation from file memory"""
+
     def load_conversation(i: int):
         st.session_state["chat_history"] = user_chats["chats"][i]
         render_chats()
@@ -165,8 +160,10 @@ def populate_chats(user_chats):
                     description=item["content"][1]["content"][:70],
                     color_name="blue-green-70"
                 )
-                col_load.button("Load", on_click=load_conversation, args=(i,), key=i, use_container_width=True)
-                col_delete.button("🗑", on_click=delete_conversation, args=(i,), key=i+10000, use_container_width=True)
+                col_load.button("Load", on_click=load_conversation,
+                                args=(i,), key=i, use_container_width=True)
+                col_delete.button("🗑", on_click=delete_conversation,
+                                  args=(i,), key=i+10000, use_container_width=True)
 
 
 def update_chat_history(role: str, text_response: str):
@@ -179,6 +176,7 @@ voice_enabled = False
 with st.sidebar:
 
     model_name = st.selectbox('Model:', SUPPORTED_MODELS)
+    template_name = st.selectbox('Prompt Template:', [item['name'] for item in st.session_state["templates"]])
     st.divider()
     voice_enabled = st.checkbox("Voice")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
@@ -196,6 +194,7 @@ with st.sidebar:
             "frequency_penalty": f_pen,
             "presence_penalty": p_pen
         }
+
     side_chats_container = st.container()
     side_chats_container.empty()
     with side_chats_container:
@@ -247,8 +246,9 @@ def process_query(query_string: str) -> None:
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
-
-            update_chat_history("user", query_string)
+            selected_template = [i_temp['text']
+                                 for i_temp in st.session_state['templates'] if i_temp['name'] == template_name][0]
+            update_chat_history("user", selected_template.format(query_string))
             render_chats()
 
             chat_response = generate_response(st.session_state["chat_history"]["content"])
@@ -271,8 +271,6 @@ def process_query(query_string: str) -> None:
 
 
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
-    # st.chat_message('user').write(query)
-
     response = process_query(query)
     if voice_enabled:
         with st.chat_message('ai', avatar='./tankfinal2.png'):
