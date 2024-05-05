@@ -17,6 +17,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # openai.api_version = "2023-03-15-preview"
 # openai.api_key = st.secrets["AZURE_OPENAI_SUBSCRIPTION_KEY"]
 
+ENCODING = "utf-8"
+
 
 def fetch_embedding(string, progress_bar=None):
     """ Fetches the embedding for the given input string.
@@ -186,26 +188,73 @@ def write_dummy_data(file_path: str, user: str):
             }
         ]
     }
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding=ENCODING) as f:
         f.write(json.dumps(dummy_data))
 
 
-def load_chats(user: str):
-    file_name = f"./chats/{user}.json"
+def write_base_templates(file_path: str, user: str):
+    """TODO this should be abstracted into a generic initialization funtion."""
+    dummy_data = {
+        "user": user,
+        "templates": [
+            {
+                "name": "Summarize",
+                "text": "Summarize the following text: {}"
+            },
+            {
+                "name": "Jokes",
+                "text": "Give me jokes about the topic: {}"
+            }
+        ]
+    }
+    with open(file_path, "w", encoding=ENCODING) as f:
+        f.write(json.dumps(dummy_data))
 
-    # If the file exists, read the dictionary from the text file
-    if os.path.exists(file_name):
-        # Check if file is empty
-        if is_json_file_empty(file_name):
-            write_dummy_data(file_name, user)
-    else:
-        write_dummy_data(file_name, user)
 
-    with open(file_name, "r") as f:
+def read_file(file_name: str):
+    """Read data from file"""
+    with open(file_name, "r", encoding=ENCODING) as f:
         data = json.loads(f.read())
     return data
 
 
+def load_chats(user: str):
+    '''Load chats from json file'''
+    file_name = f"./chats/{user}.json"
+
+    if not os.path.exists(file_name) or is_json_file_empty(file_name):
+        write_dummy_data(file_name, user)
+
+    return read_file(file_name)
+
+
 def save_chats_to_file(user, data):
-    with open(f"./chats/{user}.json", "w") as f:
+    with open(f"./chats/{user}.json", "w", encoding=ENCODING) as f:
         f.write(json.dumps(data))
+
+
+def load_prompt_templates(user: str):
+    """Load all prompt templates from file"""
+    file_name = f"./templates/{user}.json"
+
+    if not os.path.exists(file_name) or is_json_file_empty(file_name):
+        write_dummy_data(file_name, user)
+
+    return read_file(file_name)
+
+
+def load_data(user: str, directory: str, filename_template: str = "{}.json"):
+    '''Load data from file'''
+    file_name = os.path.join(directory, filename_template.format(user))
+
+    if not os.path.exists(file_name) or is_json_file_empty(file_name):
+        write_dummy_data(file_name, user)
+
+    return read_file(file_name)
+
+
+
+def save_prompt_template():
+    """Save all prompt templates to file"""
+
+    return list
