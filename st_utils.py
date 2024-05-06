@@ -1,21 +1,12 @@
 import os
-import time
-import random
-import requests
 import re
 import json
-
-import streamlit as st
+import requests
 
 from tqdm import tqdm
-# import openai
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# openai.api_type = "azure"
-# openai.api_base = st.secrets["AZURE_BASE"]
-# openai.api_version = "2023-03-15-preview"
-# openai.api_key = st.secrets["AZURE_OPENAI_SUBSCRIPTION_KEY"]
 
 ENCODING = "utf-8"
 
@@ -156,13 +147,38 @@ def format_knowledge(vector_results):
     return knowledge_elements
 
 
+def read_file(file_name: str):
+    """Read data from file"""
+    with open(file_name, "r", encoding=ENCODING) as f:
+        data = json.load(f)
+    return data
+
+
+def write_file(file_name: str, data) -> None:
+    """Write data to file"""
+    with open(file_name, "w", encoding=ENCODING) as f:
+        f.write(json.dumps(data))
+
+
 def is_json_file_empty(file_path):
+    '''Checks if json file exists but is empty.'''
     try:
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            return not bool(data)  # Check if the loaded data is empty
+        return not bool(read_file(file_path))  # Check if the loaded data is empty
     except (json.JSONDecodeError, FileNotFoundError):
         return True
+
+
+def create_directory(directory_path):
+    """Checks if a directory exists and if not creates it."""
+    if not os.path.exists(directory_path):
+        try:
+            # Create the directory
+            os.makedirs(directory_path)
+            print(f"Directory '{directory_path}' created successfully.")
+        except OSError as e:
+            print(f"Error creating directory '{directory_path}': {e}")
+    else:
+        print(f"Directory '{directory_path}' already exists.")
 
 
 def write_dummy_data(file_path: str, user: str):
@@ -178,7 +194,7 @@ def write_dummy_data(file_path: str, user: str):
                     },
                     {
                         "role": "user",
-                        "content": "hello, tell me about chats"
+                        "content": "Hello, tell me about chats"
                     },
                     {
                         "role": "assistant",
@@ -188,8 +204,7 @@ def write_dummy_data(file_path: str, user: str):
             }
         ]
     }
-    with open(file_path, "w", encoding=ENCODING) as f:
-        f.write(json.dumps(dummy_data))
+    write_file(file_path, dummy_data)
 
 
 def write_base_templates(file_path: str, user: str):
@@ -207,15 +222,7 @@ def write_base_templates(file_path: str, user: str):
             }
         ]
     }
-    with open(file_path, "w", encoding=ENCODING) as f:
-        f.write(json.dumps(dummy_data))
-
-
-def read_file(file_name: str):
-    """Read data from file"""
-    with open(file_name, "r", encoding=ENCODING) as f:
-        data = json.loads(f.read())
-    return data
+    write_file(file_path, dummy_data)
 
 
 def load_chats(user: str):
@@ -229,8 +236,8 @@ def load_chats(user: str):
 
 
 def save_chats_to_file(user, data):
-    with open(f"./chats/{user}.json", "w", encoding=ENCODING) as f:
-        f.write(json.dumps(data))
+    "save chats to the user file"
+    write_file(f"./chats/{user}.json", data)
 
 
 def load_prompt_templates(user: str):
@@ -251,7 +258,6 @@ def load_data(user: str, directory: str, filename_template: str = "{}.json"):
         write_dummy_data(file_name, user)
 
     return read_file(file_name)
-
 
 
 def save_prompt_template():
