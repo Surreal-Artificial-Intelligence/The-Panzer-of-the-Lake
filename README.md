@@ -43,6 +43,26 @@ To launch POTL, simply run:
 streamlit run home.py
 ```
 
+## Roadmap
+
+1. Prompt Templates 
+   1. CRUD
+2. Document QA
+   - FAISS
+   - Local and Remote Embedding model
+   - Local Folder QA
+3. Cleanup, Linting, Standards
+   1. Model List standardization. Make dynamic.
+4. Build and configure linting pipeline 
+5. Prompt optimizations and automatic self reflection
+6. Token counting utilities
+7. Image generation frontend
+8. Local and Remote TTS model optimizations
+9. TinyDB
+
+
+
+
 ## Authors
 
 - [@EJonkers](https://www.gitlab.com/EJonkers)

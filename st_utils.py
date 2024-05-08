@@ -1,11 +1,10 @@
 import os
 import re
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 from tqdm import tqdm
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 ENCODING = "utf-8"
@@ -31,7 +30,7 @@ def fetch_embedding(string, progress_bar=None):
         "api-key": os.environ["AZURE_OPENAI_SUBSCRIPTION_KEY"]
     }
     payload = json.dumps({"input": string})
-    response = requests.post(url, headers=headers, data=payload)
+    response = requests.post(url, headers=headers, data=payload, timeout=120)
 
     if response.status_code == 200:
         result = response.json()
@@ -72,58 +71,6 @@ def get_embeddings(strings):
                 embeddings[idx] = future.result()
 
     return embeddings
-
-
-def find_query(text):
-    """ Extracts queries enclosed between <q> and </q> tags from a given text.
-
-    Parameters
-    ----------
-    text : str
-        The input text containing query tags.
-
-    Returns
-    -------
-    matches : list of str
-        A list of queries extracted from the input text.
-    """
-    pattern = r'<q>(.*?)<\/q>'
-    matches = re.findall(pattern, text)
-    return matches
-
-
-def query_chroma(query_embeddings, collection: str):
-    """ Queries the Chroman Database API with the given embeddings and collection name.
-    Parameters
-    ----------
-    query_embeddings : list of dict
-        A list of query embeddings.
-    collection : str
-        The name of the collection to be queried.
-
-    Returns
-    -------
-    response : dict
-        The JSON response from the Chroma API.
-    """
-    url = f"http://localhost:8000/api/v1/collections/{collection}/query"
-
-    payload = {
-        "query_embeddings": [query_embeddings],
-        "n_results": 5,  # The number of nearest neighbors to return
-        # Fields to include in the response
-        "include": ["documents", "embeddings", "metadatas", "distances"],
-    }
-
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(url, json=payload, headers=headers)
-
-    if response.status_code == 200:
-        print("Query executed successfully.")
-        # print(response.json())
-    else:
-        print("Error occurred:", response.status_code, response.text)
-    return response.json()
 
 
 def format_knowledge(vector_results):
@@ -182,6 +129,7 @@ def create_directory(directory_path):
 
 
 def write_dummy_data(file_path: str, user: str):
+    '''Write basic chats file'''
     dummy_data = {
         "user": f"{user}",
         "chats": [
