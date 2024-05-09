@@ -5,10 +5,10 @@ from streamlit_extras.colored_header import colored_header
 
 from st_utils import (
     ENCODING,
-    load_prompt_templates
+    load_data
 )
 
-TEMPLATE_PATH = "./templates"
+TEMPLATES_PATH = "./templates"
 
 st.set_page_config(
     page_title="POTL",
@@ -27,20 +27,7 @@ def initialize_session_variables() -> None:
     """Initializes session variables"""
 
     if 'templates' not in st.session_state:
-        st.session_state["templates"] = load_prompt_templates()
-        # st.session_state["templates"] = {
-        #     "user": "Emile",
-        #     "templates": [
-        #         {
-        #             "name": "Summarize",
-        #             "text": "Summarize the following text: {}"
-        #         },
-        #         {
-        #             "name": "Jokes",
-        #             "text": "Give me jokes about the topic: {}"
-        #         }
-        #     ]
-        # }
+        st.session_state["templates"] = load_data("Emile", TEMPLATES_PATH)["templates"]
         st.session_state["templates"] = st.session_state["templates"]["templates"]
     if 'i_template' not in st.session_state:
         st.session_state["i_template"] = ""

@@ -31,8 +31,8 @@ colored_header(label="Panzer of the Lake",
                color_name="blue-green-70"
                )
 
-CHATS_FOLDER = "./chats"
-TEMPLATES_FOLDER = "./templates"
+CHATS_PATH = "./chats"
+TEMPLATES_PATH = "./templates"
 
 # Utility Functions
 chat_container = st.container()
@@ -51,11 +51,10 @@ def initialize_session_variables() -> None:
             {"role": "system", "content": "You are an all-knowing, highly compliant AI assistant."}]}
 
     if 'chats' not in st.session_state:
-        st.session_state["chats"] = load_data("Emile", CHATS_FOLDER)
+        st.session_state["chats"] = load_data("Emile", CHATS_PATH)
 
     if 'templates' not in st.session_state:
-        st.session_state["templates"] = load_data(
-            st.session_state["chats"]["user"], TEMPLATES_FOLDER)['templates']
+        st.session_state["templates"] = load_data("Emile", TEMPLATES_PATH)["templates"]
 
     if 'model' not in st.session_state:
         st.session_state["model"] = None

@@ -21,8 +21,6 @@ Run the following command to install Pipenv, a virtual environment manager:
 pip install pipenv
 ```
 
-All models must be stored in the `models/` directory.
-
 ## Installation
 
 Clone the repository, go into the repository directory, and then initialise the
