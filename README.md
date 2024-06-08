@@ -51,6 +51,7 @@ streamlit run home.py
    - Local Folder QA
 3. Cleanup, Linting, Standards
    1. Model List standardization. Make dynamic.
+   2. Make everything into a package.
 4. Build and configure linting pipeline 
 5. Prompt optimizations and automatic self reflection
 6. Token counting utilities
