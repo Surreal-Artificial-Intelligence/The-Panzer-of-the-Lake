@@ -15,7 +15,7 @@ st.set_page_config(
 
 colored_header(label="Panzer of the Sky",
                description="Ask the sky for an image and it may grant it",
-               color_name="white-70", )
+               color_name="blue-70", )
 
 
 # Session States
