@@ -7,7 +7,7 @@ from streamlit_extras.colored_header import colored_header
 
 from ollama_model import OllamaModel
 from open_ai_model import OpenAIModel
-from openai_azure_model import OpenAIAzureModel
+from azure_openai_model import AzureOpenAIModel
 # from xtts_v2_model import XTTSV2Model
 
 from config import SUPPORTED_MODELS

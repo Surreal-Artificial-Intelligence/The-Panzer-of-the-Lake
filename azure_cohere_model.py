@@ -1,30 +1,65 @@
-from typing import Dict
-import json
 import random
 import time
 import streamlit as st
-from openai import AzureOpenAI
+import requests
+import logging
+from IModel import IModel
 
 
-class OpenAIAzureModel:
-    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
-        self.azure_openai_client = AzureOpenAI(api_key=api_key,
-                                               api_version=api_version,
-                                               azure_endpoint=azure_endpoint)
+class CohereAzureModel(IModel):
+    """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
+    the Cohere Azure API and receiving responses from the API."""
+
+    def __init__(
+        self, api_key: str, api_version: str, azure_endpoint: str, model_name: str
+    ):
+        self.api_key = api_key
+        self.azure_endpoint = azure_endpoint
+        self.api_version = api_version
+        if not self.api_key:
+            raise ValueError("No API key provided")
+
         self.model_name = model_name
 
     def test_connection(self):
         """Test the connection to the remote resource"""
-        response = self.azure_openai_client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "system", "content": "You are an AI assistant"},
-                      {"role": "user", "content": "Hello"}]
-        )
-        return response
+        data = {
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}],
+            "temperature": 0.7,
+            "top_p": 1,
+            "stop": [],
+        }
 
-    def calculate_sleep_time(self, retries: int, initial_delay: float, backoff_factor: float,
-                             jitter: float, max_delay: float) -> float:
-        """ The function returns the calculated sleep time, which is then used by the continue_conversation function to
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        try:
+            url = self.azure_endpoint
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_error:
+            logging.error("HTTP error occurred: %s", http_error)
+        except requests.exceptions.ConnectionError as conn_error:
+            logging.error("Connection error occurred: %s", conn_error)
+        except requests.exceptions.Timeout as timeout_error:
+            logging.error("Timeout error occurred: %s", timeout_error)
+        except requests.exceptions.RequestException as request_error:
+            logging.error("Error occurred while sending the request: %s", request_error)
+        except Exception as error:
+            raise error
+
+    def calculate_sleep_time(
+        self,
+        retries: int,
+        initial_delay: float,
+        backoff_factor: float,
+        jitter: float,
+        max_delay: float,
+    ) -> float:
+        """The function returns the calculated sleep time, which is then used by the continue_conversation function to
         pause execution before attempting another retry. The function calculates the sleep time using the following
         steps:
 
@@ -60,14 +95,22 @@ class OpenAIAzureModel:
         sleep_time : float
             The calculated sleep time in seconds.
         """
-        sleep_time = initial_delay * (backoff_factor ** retries)
+        sleep_time = initial_delay * (backoff_factor**retries)
         sleep_time += random.uniform(-jitter * sleep_time, jitter * sleep_time)
         return min(sleep_time, max_delay)
 
-    def chat(self, messages, model=st.secrets['AZURE_OPENAI_DEPLOYMENT'],
-             max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
-             max_delay=64, on_retry=None, **kwargs) -> str:
-        """ Sends a request to the model with exponential backoff retry policy.
+    def chat(
+        self,
+        messages,
+        max_retries=10,
+        initial_delay=1,
+        backoff_factor=2,
+        jitter=0.1,
+        max_delay=64,
+        on_retry=None,
+        **kwargs,
+    ) -> str:
+        """Sends a request to the model with exponential backoff retry policy.
         Parameters
         ----------
         message : str
@@ -96,32 +139,33 @@ class OpenAIAzureModel:
         retries = 0
         while retries < max_retries:
             try:
-                return self.azure_openai_client.chat.completions.create(
-                        model=self.model_name,
-                        messages=messages
-                    )
+                url = self.azure_endpoint
+                response = requests.post(
+                    url,
+                    json={"messages": messages},
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.api_key}",
+                    },
+                )
+                response.raise_for_status()
+                return response.json()
             except Exception as error:
                 if retries == max_retries - 1:
-                    raise error  # Raise the exception if max_retries reached
+                    raise error
                 else:
-                    sleep_time = self.calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
+                    sleep_time = self.calculate_sleep_time(
+                        retries, initial_delay, backoff_factor, jitter, max_delay
+                    )
                     if on_retry is not None:
-                        # Execute the on_retry callback, if provided
                         on_retry(retries, sleep_time, error)
-                    time.sleep(sleep_time)  # Sleep before retrying
+                    time.sleep(sleep_time)
                     retries += 1
 
+        return "Maximum number of retries exceeded."
+
     def log_retries(self, retries, sleep_time, error):
-        """ Logs a message for retry attempts and sleep time.
-
-        Parameters
-        ----------
-        retries : int
-            The number of retries that have been attempted so far.
-        sleep_time : float
-        The calculated sleep time in seconds.
-
-        """
+        """Logs a message for retry attempts and sleep time."""
         retry = f"Retry attempt {retries} failed. Waiting {sleep_time:.2f} seconds before trying again. Error: {error}"
         st.warning(retry)
 
