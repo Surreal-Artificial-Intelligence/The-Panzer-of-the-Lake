@@ -84,7 +84,7 @@ def get_openai_connection():
 @st.cache_resource
 def get_openai_azure_connection():
     """Instantiate and return the AzureOpenAI model client"""
-    client = OpenAIAzureModel(api_key=st.secrets['AZURE_OPENAI_API_KEY'],
+    client = AzureOpenAIModel(api_key=st.secrets['AZURE_OPENAI_API_KEY'],
                               api_version=st.secrets['AZURE_API_VERSION'],
                               azure_endpoint=st.secrets['AZURE_OPENAI_BASE'],
                               model_name=st.secrets['AZURE_OPENAI_DEPLOYMENT'])
