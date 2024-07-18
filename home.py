@@ -8,28 +8,28 @@ from streamlit_extras.colored_header import colored_header
 from ollama_model import OllamaModel
 from open_ai_model import OpenAIModel
 from azure_openai_model import AzureOpenAIModel
+from azure_cohere_model import CohereAzureModel
+
 # from xtts_v2_model import XTTSV2Model
 
 from config import SUPPORTED_MODELS
 
 
-from st_utils import (
-    save_chats_to_file,
-    load_data
-)
+from st_utils import save_chats_to_file, load_data
 
 
 st.set_page_config(
     page_title="POTL",
     layout="wide",
     initial_sidebar_state="auto",
-    menu_items={"about": "Built by Surreal AI"}
+    menu_items={"about": "Built by Surreal AI"},
 )
 
-colored_header(label="Panzer of the Lake",
-               description="Welcome to the lake ask your question so the Panzer may answer it.",
-               color_name="blue-green-70"
-               )
+colored_header(
+    label="Panzer of the Lake",
+    description="Welcome to the lake ask your question so the Panzer may answer it.",
+    color_name="blue-green-70",
+)
 
 CHATS_PATH = "./chats"
 TEMPLATES_PATH = "./templates"
@@ -46,57 +46,83 @@ side_chats_container.empty()
 def initialize_session_variables() -> None:
     """Initializes session variables and loads user data."""
 
-    if 'chat_history' not in st.session_state:
-        st.session_state["chat_history"] = {"title": "", "content": [
-            {"role": "system", "content": "You are an all-knowing, highly compliant AI assistant."}]}
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = {
+            "title": "",
+            "content": [
+                {
+                    "role": "system",
+                    "content": "You are an all-knowing, highly compliant AI assistant.",
+                }
+            ],
+        }
 
-    if 'chats' not in st.session_state:
+    if "chats" not in st.session_state:
         st.session_state["chats"] = load_data("Emile", CHATS_PATH)
 
-    if 'templates' not in st.session_state:
+    if "templates" not in st.session_state:
         st.session_state["templates"] = load_data("Emile", TEMPLATES_PATH)["templates"]
 
-    if 'model' not in st.session_state:
+    if "model" not in st.session_state:
         st.session_state["model"] = None
 
-    if 'total_tokens_used' not in st.session_state:
+    if "total_tokens_used" not in st.session_state:
         st.session_state["total_tokens_used"] = 0
 
-    if 'hyperparameters' not in st.session_state:
+    if "hyperparameters" not in st.session_state:
         st.session_state["hyperparameters"] = {
             "temperature": 0.5,
             "max_tokens": 5000,
             "top_p": 0.95,
             "frequency_penalty": 0.0,
-            "presence_penalty": 0.0}
+            "presence_penalty": 0.0,
+        }
 
 
 initialize_session_variables()
 
 
 @st.cache_resource
-def get_openai_connection():
+def get_openai_connection(model_label: str = "gpt-4o"):
     """Instantiate and return the OpenAI model client"""
-    client = OpenAIModel(api_key=st.secrets['OPENAI_API_KEY'], model_name="gpt-3.5-turbo-0613")
+    client = OpenAIModel(
+        api_key=st.secrets["OPENAI_API_KEY"], model_name=model_label
+    )
     return client
 
 
 @st.cache_resource
-def get_openai_azure_connection():
+def get_openai_azure_connection(model_label: str = "gpt-4o"):
     """Instantiate and return the AzureOpenAI model client"""
-    client = AzureOpenAIModel(api_key=st.secrets['AZURE_OPENAI_API_KEY'],
-                              api_version=st.secrets['AZURE_API_VERSION'],
-                              azure_endpoint=st.secrets['AZURE_OPENAI_BASE'],
-                              model_name=st.secrets['AZURE_OPENAI_DEPLOYMENT'])
+    client = AzureOpenAIModel(
+        api_key=st.secrets["AZURE_OPENAI_API_KEY"],
+        api_version=st.secrets["AZURE_API_VERSION"],
+        azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
+        model_name=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
+    )
     return client
 
 
 @st.cache_resource
-def get_ollama_connection(url: str = "http://localhost:11434/api/chat",
-                          model_label: str = "mistral"):
+def get_cohere_azure_connection(model_label: str = "command-r-plus"):
+    """Instantiate and return the CohereAzure model client"""
+    client = CohereAzureModel(
+        api_key=st.secrets["AZURE_COHERE_API_KEY"],
+        api_version=st.secrets["AZURE_API_VERSION"],
+        azure_endpoint=st.secrets["AZURE_COHERE_BASE"],
+        model_name=st.secrets["AZURE_COHERE_DEPLOYMENT"],
+    )
+    return client
+
+
+@st.cache_resource
+def get_ollama_connection(
+    url: str = "http://localhost:11434/api/chat", model_label: str = "mistral"
+):
     """Instantiate and return the Ollama model client"""
     client = OllamaModel(url, model_label)
     return client
+
 
 # @st.cache_resource
 # def get_custom_tts_connection():
@@ -130,12 +156,12 @@ def render_chats():
     chat_container.empty()
     with chat_container:
         for item in st.session_state["chat_history"]["content"][1:]:
-            if item["role"] == 'assistant':
-                with st.chat_message(item["role"], avatar='./tankfinal2.png'):
-                    st.markdown(item['content'])
+            if item["role"] == "assistant":
+                with st.chat_message(item["role"], avatar="./tankfinal2.png"):
+                    st.markdown(item["content"])
             else:
                 with st.chat_message(item["role"]):
-                    st.markdown(item['content'])
+                    st.markdown(item["content"])
 
 
 def populate_chats(user_chats):
@@ -157,25 +183,39 @@ def populate_chats(user_chats):
                 colored_header(
                     label="",
                     description=item["content"][1]["content"][:70],
-                    color_name="blue-green-70"
+                    color_name="blue-green-70",
                 )
-                col_load.button("Load", on_click=load_conversation,
-                                args=(i,), key=i, use_container_width=True)
-                col_delete.button("🗑", on_click=delete_conversation,
-                                  args=(i,), key=i+10000, use_container_width=True)
+                col_load.button(
+                    "Load",
+                    on_click=load_conversation,
+                    args=(i,),
+                    key=i,
+                    use_container_width=True,
+                )
+                col_delete.button(
+                    "🗑",
+                    on_click=delete_conversation,
+                    args=(i,),
+                    key=i + 10000,
+                    use_container_width=True,
+                )
 
 
 def update_chat_history(role: str, text_response: str):
     """Appends new content to the chat history session variable"""
-    st.session_state["chat_history"]["content"].append({'role': role, 'content': text_response})
+    st.session_state["chat_history"]["content"].append(
+        {"role": role, "content": text_response}
+    )
     return
 
 
 voice_enabled = False
 with st.sidebar:
-
-    model_name = st.selectbox('Model:', SUPPORTED_MODELS)
-    template_name = st.selectbox('Prompt Template:', [item['name'] for item in st.session_state["templates"]])
+    corporation = st.selectbox("Corporation:", SUPPORTED_MODELS.keys())
+    model_name = st.selectbox("Model:", SUPPORTED_MODELS[corporation])  # type: ignore
+    template_name = st.selectbox(
+        "Prompt Template:", [item["name"] for item in st.session_state["templates"]]
+    )
     st.divider()
     voice_enabled = st.checkbox("Voice")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
@@ -191,7 +231,7 @@ with st.sidebar:
             "max_tokens": max_t,
             "top_p": top_p,
             "frequency_penalty": f_pen,
-            "presence_penalty": p_pen
+            "presence_penalty": p_pen,
         }
 
     side_chats_container = st.container()
@@ -200,22 +240,18 @@ with st.sidebar:
         populate_chats(st.session_state["chats"])
 
 
-def query_text_to_speech_api(text: str, lang: str = 'en'):
+def query_text_to_speech_api(text: str, lang: str = "en"):
     """Gets speech audio from tts endpoint"""
     api_url = "http://localhost:8000/text-to-speech"
     try:
         # Sending a POST request
-        data = {
-            "text": text,
-            "lang": lang
-        }
+        data = {"text": text, "lang": lang}
 
         tts_response = requests.post(api_url, headers="headerss", json=data)
 
         if tts_response.status_code == 200:
-
             # Decode the binary data to a string
-            json_string = tts_response.content.decode('utf-8')
+            json_string = tts_response.content.decode("utf-8")
             # Convert the JSON string to a Python list
             audio_list = json.loads(json_string)
             audio_array = np.array(audio_list)
@@ -227,17 +263,21 @@ def query_text_to_speech_api(text: str, lang: str = 'en'):
         print(f"Exception: {str(e)}")
 
 
+corporation_clients = {
+    "OpenAI": get_openai_connection,
+    "Azure": get_openai_azure_connection,
+    "Ollama": get_ollama_connection,
+}
+
+
 def generate_response(messages):
     """Calls a specific model client to get a response"""
 
-    if model_name == "OpenAI":
-        client = get_openai_connection()
-    elif model_name == "Azure":
-        client = get_openai_azure_connection()
+    if corporation in corporation_clients:
+        client = corporation_clients.get(corporation, "Ollama")(model_label=model_name)  # type: ignore
+        return client.chat(messages)
     else:
-        client = get_ollama_connection(model_label=model_name)
-
-    return client.chat(messages)
+        raise ValueError(f"Invalid model name: {model_name}")
 
 
 def process_query(query_string: str) -> None:
@@ -245,14 +285,19 @@ def process_query(query_string: str) -> None:
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
-            selected_template = [i_temp['text']
-                                 for i_temp in st.session_state['templates'] if i_temp['name'] == template_name][0]
+            selected_template = [
+                i_temp["text"]
+                for i_temp in st.session_state["templates"]
+                if i_temp["name"] == template_name
+            ][0]
             update_chat_history("user", selected_template.format(query_string))
             render_chats()
 
-            chat_response = generate_response(st.session_state["chat_history"]["content"])
+            chat_response = generate_response(
+                st.session_state["chat_history"]["content"]
+            )
 
-            if model_name == "OpenAI" or model_name == 'Azure':
+            if model_name == "OpenAI" or model_name == "Azure":
                 text_response = chat_response.choices[0].message.content
                 st.session_state["total_tokens_used"] = chat_response.usage.total_tokens
             else:
@@ -260,10 +305,14 @@ def process_query(query_string: str) -> None:
 
             update_chat_history("assistant", text_response)
             quicksave_chat()
-            save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
+            save_chats_to_file(
+                st.session_state["chats"]["user"], st.session_state["chats"]
+            )
 
             if voice_enabled:
-                status.update(label="Weaving resonance...", state="running", expanded=False)
+                status.update(
+                    label="Weaving resonance...", state="running", expanded=False
+                )
                 return query_text_to_speech_api(text=text_response)
             else:
                 return text_response
@@ -272,9 +321,9 @@ def process_query(query_string: str) -> None:
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
     response = process_query(query)
     if voice_enabled:
-        with st.chat_message('ai', avatar='./tankfinal2.png'):
+        with st.chat_message("ai", avatar="./tankfinal2.png"):
             st.write("Hear ye, hear ye.")
-            st.audio(response, format='audio/wav', sample_rate=24000)
+            st.audio(response, format="audio/wav", sample_rate=24000)
     else:
-        st.chat_message('ai', avatar='./tankfinal2.png').write(response)
+        st.chat_message("ai", avatar="./tankfinal2.png").write(response)
         st.write("Total tokens:", st.session_state["total_tokens_used"])
