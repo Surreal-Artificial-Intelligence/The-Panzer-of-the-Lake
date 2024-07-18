@@ -15,6 +15,7 @@ The full documentation can be found in the `docs` directory.
 
 ## Dependencies
 
+Python 3.10 or higher is required.
 Run the following command to install Pipenv, a virtual environment manager:
 
 ```bash
@@ -44,8 +45,9 @@ streamlit run home.py
 ## Roadmap
 
 1. Prompt Templates
-   1. CRUD
+   1. CRUD (TinyDB)
 2. Document QA
+   - UI components
    - FAISS
    - Local and Remote Embedding model
    - Local Folder QA
@@ -54,10 +56,12 @@ streamlit run home.py
    2. Make everything into a package.
 4. Build and configure linting pipeline
 5. Prompt optimizations and automatic self reflection
-6. Token counting utilities
+6. Token counting utilities (client side)
 7. [x] - Image generation frontend
 8. Local and Remote TTS model optimizations
-9. TinyDB
+9.  TinyDB
+10. Upgrade to Python 3.12
+11. Hook up custom vector database for advanced RAG.
 
 ## Authors
 
