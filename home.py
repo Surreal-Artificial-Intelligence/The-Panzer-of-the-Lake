@@ -297,7 +297,7 @@ def process_query(query_string: str) -> None:
                 st.session_state["chat_history"]["content"]
             )
 
-            if model_name == "OpenAI" or model_name == "Azure":
+            if corporation == "OpenAI" or corporation == "Azure":
                 text_response = chat_response.choices[0].message.content
                 st.session_state["total_tokens_used"] = chat_response.usage.total_tokens
             else:

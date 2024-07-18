@@ -59,7 +59,7 @@ streamlit run home.py
 6. Token counting utilities (client side)
 7. [x] - Image generation frontend
 8. Local and Remote TTS model optimizations
-9.  TinyDB
+9. TinyDB
 10. Upgrade to Python 3.12
 11. Hook up custom vector database for advanced RAG.
 
