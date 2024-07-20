@@ -16,3 +16,14 @@ SUPPORTED_MODELS = {
         "aya",
     ],
 }
+
+
+CHATS_PATH = "./chats"
+TEMPLATES_PATH = "./templates"
+ASSETS_PATH = "./assets"
+DB_PATH = "./db/db.json"
+
+LOGO_CONFIG = {
+    "image": f"{ASSETS_PATH}/surreal-logo-and-text.png",
+    "icon_image": f"{ASSETS_PATH}/surreal-logo.jpg"
+}

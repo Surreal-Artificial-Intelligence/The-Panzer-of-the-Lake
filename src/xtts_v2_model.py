@@ -3,7 +3,7 @@ import json
 import random
 import time
 from model_utils import calculate_sleep_time, log_retries
-from tts_model import TTSModel
+from interfaces.tts_model import TTSModel
 
 
 class XTTSV2Model(TTSModel):

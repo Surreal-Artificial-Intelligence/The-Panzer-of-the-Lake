@@ -2,7 +2,7 @@ import time
 import requests
 import logging
 from interfaces.IModel import IModel
-from model_utils import calculate_sleep_time
+from utils import calculate_sleep_time
 
 
 class CohereAzureModel(IModel):

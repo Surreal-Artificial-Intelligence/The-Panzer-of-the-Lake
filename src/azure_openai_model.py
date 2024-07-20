@@ -1,8 +1,7 @@
-import random
 import time
 import streamlit as st
 from openai import AzureOpenAI
-from model_utils import calculate_sleep_time
+from utils import calculate_sleep_time
 
 
 class AzureOpenAIModel:

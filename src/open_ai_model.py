@@ -1,6 +1,6 @@
 import time
 from openai import OpenAI
-from model_utils import calculate_sleep_time, log_retries
+from utils import calculate_sleep_time, log_retries
 
 
 class OpenAIModel:

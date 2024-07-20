@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from model_utils import calculate_sleep_time, log_retries
+
 
 class IModel(ABC):
+    """Abstract class for all models"""
+
     @abstractmethod
     def __init__(self) -> None:
         pass
@@ -13,5 +15,3 @@ class IModel(ABC):
     @abstractmethod
     def chat(self) -> str:
         pass
-    
-    

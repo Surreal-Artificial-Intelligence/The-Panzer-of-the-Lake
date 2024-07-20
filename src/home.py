@@ -10,16 +10,22 @@ from open_ai_model import OpenAIModel
 from azure_openai_model import AzureOpenAIModel
 from azure_cohere_model import CohereAzureModel
 
+from config import (
+    SUPPORTED_MODELS,
+    ASSETS_PATH,
+    CHATS_PATH,
+    TEMPLATES_PATH,
+    LOGO_CONFIG,
+    DB_PATH
+)
 
-from config import SUPPORTED_MODELS
 
-
-from st_utils import save_chats_to_file, load_data
-from model_utils import log_retries
+from utils import save_chats_to_file, load_data, log_retries
 
 
 st.set_page_config(
     page_title="POTL",
+    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
     layout="wide",
     initial_sidebar_state="auto",
     menu_items={"about": "Built by Surreal AI"},
@@ -31,10 +37,9 @@ colored_header(
     color_name="blue-green-70",
 )
 
-st.logo("./surreal-logo-and-text.png", icon_image="./surreal-logo.jpg")
 
-CHATS_PATH = "./chats"
-TEMPLATES_PATH = "./templates"
+st.logo(**LOGO_CONFIG)
+
 
 # Utility Functions
 chat_container = st.container()
@@ -87,9 +92,7 @@ initialize_session_variables()
 @st.cache_resource
 def get_openai_connection(model_label: str = "gpt-4o"):
     """Instantiate and return the OpenAI model client"""
-    client = OpenAIModel(
-        api_key=st.secrets["OPENAI_API_KEY"], model_name=model_label
-    )
+    client = OpenAIModel(api_key=st.secrets["OPENAI_API_KEY"], model_name=model_label)
     return client
 
 
@@ -159,7 +162,7 @@ def render_chats():
     with chat_container:
         for item in st.session_state["chat_history"]["content"][1:]:
             if item["role"] == "assistant":
-                with st.chat_message(item["role"], avatar="./tankfinal2.png"):
+                with st.chat_message(item["role"], avatar=f"{ASSETS_PATH}/tank.jpeg"):
                     st.markdown(item["content"])
             else:
                 with st.chat_message(item["role"]):
@@ -323,10 +326,9 @@ def process_query(query_string: str) -> None:
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
     response = process_query(query)
     if voice_enabled:
-        with st.chat_message("ai", avatar="./tankfinal2.png"):
+        with st.chat_message("ai", avatar=f"{ASSETS_PATH}/tank.jpeg"):
             st.write("Hear ye, hear ye.")
             st.audio(response, format="audio/wav", sample_rate=24000)
     else:
-        st.chat_message("ai", avatar="./tankfinal2.png").write(response)
+        st.chat_message("ai", avatar=f"{ASSETS_PATH}/tank.jpeg").write(response)
         st.write("Total tokens:", st.session_state["total_tokens_used"])
-
