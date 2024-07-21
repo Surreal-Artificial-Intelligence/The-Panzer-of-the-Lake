@@ -1,20 +1,10 @@
-import json
-
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
+from tinydb import TinyDB, Query
+from data_class.prompt_template import PromptTemplate
+from tinydb.table import Document
+from config import LOGO_CONFIG, DB_PATH
 
-from utils import ENCODING, load_data
-
-from config import (
-    SUPPORTED_MODELS,
-    ASSETS_PATH,
-    CHATS_PATH,
-    TEMPLATES_PATH,
-    LOGO_CONFIG,
-)
-
-
-TEMPLATES_PATH = "./templates"
 
 st.set_page_config(
     page_title="POTL",
@@ -26,77 +16,144 @@ st.set_page_config(
 colored_header(
     label="Panzer Prompt Template Editor",
     description="Edit your prompt templates here to make asking the panzer the same questions easier.",
-    color_name="blue-green-90",
+    color_name="blue-green-70",
 )
 
+st.logo(**LOGO_CONFIG)
 
-def initialize_session_variables() -> None:
+# # @st.cache_resource
+
+# def save_template():
+#     """Saves the current template to the database"""
+#     with db
+
+
+def initialize_database(user: str):
+    """Initialize the prompt template table."""
+
+    with TinyDB(DB_PATH) as db:
+        templates = [
+            {"user": user, "name": "None", "text": "{}"},
+            {
+                "user": user,
+                "name": "Summarize",
+                "text": "Summarize the following text: {}",
+            },
+            {
+                "user": user,
+                "name": "Jokes",
+                "text": "Give me jokes about the topic: {}",
+            },
+        ]
+
+        table = db.table("prompt_template")
+
+        existing_templates = table.search(
+            (Query().name == "None") and (Query().user == user)
+        )
+
+        if existing_templates:
+            return
+
+        table.insert_multiple(templates)
+
+    print("Prompt templates initialized.")
+
+
+def init_session_states() -> None:
     """Initializes session variables"""
 
-    if "templates" not in st.session_state:
-        st.session_state["templates"] = load_data("Emile", TEMPLATES_PATH)["templates"]
-        st.session_state["templates"] = st.session_state["templates"]["templates"]
-    if "i_template" not in st.session_state:
-        st.session_state["i_template"] = ""
+    if "user" not in st.session_state:
+        st.session_state["user"] = "Emile"
+
+    if "edit" not in st.session_state:
+        st.session_state["edit"] = ""
+
+    if "user_templates" not in st.session_state:
+        initialize_database(st.session_state["user"])
+        with TinyDB(DB_PATH) as db:
+            results = db.table("prompt_template").search(
+                Query().user == st.session_state["user"]
+            )
+            # need to iterate to get doc_id
+            documents_with_ids = [
+                PromptTemplate(id=doc.doc_id, name=doc["name"], text=doc["text"])
+                for doc in results
+            ]
+            st.session_state["user_templates"] = documents_with_ids
 
 
 template_list_column, edit_template_column = st.columns(2)
 
-initialize_session_variables()
+init_session_states()
 
 
-def update_template():
-    return
+def load_templates(user: str):
+    st.session_state["user_templates"] = (
+        TinyDB(DB_PATH).table("prompt_templates").search((Query().user == user))
+    )
+
+
+def upsert_template(template: PromptTemplate):
+    """Updates a template in the database."""
+
+    with TinyDB(DB_PATH) as db:
+        db.table("prompt_template").upsert(
+            Document({"name": template.name, "text": template.text}, doc_id=template.id)
+        )
 
 
 def render_template():
     return
 
 
-def save_prompts_to_file(templates):
-    """Write templates to file"""
-    # TODO can this become completely universal for prompts and chats within the utils
-    # TODO surround in try catch
-    with open(f"{TEMPLATE_PATH}/{templates['user']}.json", "w", encoding=ENCODING) as f:
-        f.write(json.dumps(templates))
+# def save_prompts_to_file(templates):
+#     """Write templates to file"""
+#     # TODO can this become completely universal for prompts and chats within the utils
+#     # TODO surround in try catch
+#     with open(f"{TEMPLATE_PATH}/{templates['user']}.json", "w", encoding=ENCODING) as f:
+#         f.write(json.dumps(templates))
 
 
 def populate_template():
     """Renders templates in bubbles in the UI"""
 
-    def load_template(i: int):
-        st.session_state["i_template"] = st.session_state["templates"][i]
+    def load_template(id: int):
+        """Finds and loads a template from the session state into the editor"""
+        for pt in st.session_state["user_templates"]:
+            if pt.id == id:
+                st.session_state["edit"] = pt
+                break
 
     def delete_template(i: int):
-        st.session_state["i_template"] = st.session_state["templates"][i]
-        render_template()
-        del st.session_state["templates"][i]
-        save_prompts_to_file(st.session_state["templates"])
+        pass
 
-    for i, item in enumerate(st.session_state["templates"]):
+    for i, prompt_template in enumerate(st.session_state["user_templates"]):
         template_tile_container = st.container()
         col_load, col_delete = st.columns(2)
+        if prompt_template.name == "None":
+            continue
+
         with template_tile_container:
-            if item:
-                colored_header(
-                    label="",
-                    description=f"## {item['name']} \n\n {item['text']}",
-                    color_name="yellow-10",
-                )
-                col_load.button(
-                    "Load",
-                    on_click=load_template,
-                    args=(i,),
-                    key=i,
-                    use_container_width=True,
-                )
-                col_delete.button(
-                    "🗑",
-                    on_click=delete_template,
-                    args=(i,),
-                    key=i + 10000,
-                    use_container_width=True,
-                )
+            colored_header(
+                label="",
+                description=f"## {prompt_template.name} \n\n {prompt_template.name}",
+                color_name="blue-green-70",
+            )
+            col_load.button(
+                "Load",
+                on_click=load_template,
+                args=(prompt_template.id,),
+                key=i,
+                use_container_width=True,
+            )
+            col_delete.button(
+                "🗑",
+                on_click=delete_template,
+                args=(prompt_template.id,),
+                key=i + 10000,
+                use_container_width=True,
+            )
 
 
 with st.sidebar:
@@ -106,15 +163,20 @@ with st.sidebar:
         populate_template()
 
 with edit_template_column:
-    title = st.text_input("Title", value=st.session_state["i_template"]["name"])
+    title = st.text_input(
+        "Title", value=st.session_state["edit"].name if st.session_state["edit"] else ""
+    )
     body = st.text_area(
-        value=st.session_state["i_template"]["text"],
+        value=st.session_state["edit"].text if st.session_state["edit"] else "",
         label="Template (remember the {})",
         height=500,
         placeholder="Click on a template to edit it...",
     )
     update = st.button("Update")
     if update:
-        updated_template = {"name": title, "template": body}
-        # st.session_state["i_template"] =
-        update_template()
+        updated_template = {
+            "doc_id": st.session_state["edit"].id,
+            "name": title,
+            "text": body,
+        }
+        upsert_template(PromptTemplate(**updated_template))
