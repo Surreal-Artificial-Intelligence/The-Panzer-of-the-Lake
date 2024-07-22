@@ -1,3 +1,4 @@
 *.toml
 *.json
 __pycache__
+.vscode

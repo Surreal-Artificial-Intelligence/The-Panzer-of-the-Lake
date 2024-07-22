@@ -8,11 +8,12 @@ streamlit-extras = "*"
 ipykernel = "*"
 tiktoken = "*"
 tqdm = "*"
-streamlit = "==1.34.0"
+streamlit = "*"
 openai = "*"
 llama-index = "*"
 langchain = "*"
 pypdf = "*"
+tinydb = "*"
 
 [dev-packages]
 
