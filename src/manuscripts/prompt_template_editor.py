@@ -3,11 +3,12 @@ from streamlit_extras.colored_header import colored_header
 from tinydb import TinyDB, Query
 from data_class.prompt_template import PromptTemplate
 from tinydb.table import Document
-from config import LOGO_CONFIG, DB_PATH
+from config import LOGO_CONFIG, DB_PATH, ASSETS_PATH
 
 
 st.set_page_config(
     page_title="POTL",
+    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
     layout="wide",
     initial_sidebar_state="auto",
     menu_items={"about": "Built by Surreal AI"},

@@ -9,7 +9,6 @@ from config import (
     LOGO_CONFIG,
 )
 
-# Streamlit Page Configuration
 st.set_page_config(
     page_title="Panzer of the Sky",
     page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
