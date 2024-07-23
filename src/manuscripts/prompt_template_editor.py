@@ -96,12 +96,26 @@ def load_templates(user: str):
 
 
 def upsert_template(template: PromptTemplate):
-    """Updates a template in the database."""
+    """Updates or creates a template in the database."""
 
     with TinyDB(DB_PATH) as db:
-        db.table("prompt_template").upsert(
-            Document({"name": template.name, "text": template.text}, doc_id=template.id)
-        )
+        if template.id is None:
+
+            db.table("prompt_template").insert(
+                {
+                    "user": st.session_state["user"],
+                    "name": template.name,
+                    "text": template.text,
+                }
+            )
+            st.toast(f"Saved {template.name}", icon=":material/article:")
+        else:
+            db.table("prompt_template").upsert(
+                Document(
+                    {"name": template.name, "text": template.text}, doc_id=template.id
+                )
+            )
+            st.toast(f"Updated {template.name}", icon=":material/ink_pen:")
 
 
 def render_template():
@@ -173,10 +187,24 @@ with edit_template_column:
         height=500,
         placeholder="Click on a template to edit it...",
     )
-    update = st.button("Update")
+    col1, col2 = st.columns(2)
+    with col1:
+        update = st.button("Update")
+    with col2:
+        create = st.button("Create")
+
+    if create:
+        new_template = {
+            "name": title,
+            "text": body,
+        }
+        upsert_template(
+            PromptTemplate(None, name=new_template["name"], text=new_template["text"])
+        )
+
     if update:
         updated_template = {
-            "doc_id": st.session_state["edit"].id,
+            "id": st.session_state["edit"].id,
             "name": title,
             "text": body,
         }

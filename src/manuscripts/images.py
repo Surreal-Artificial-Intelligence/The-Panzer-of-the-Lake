@@ -13,14 +13,14 @@ st.set_page_config(
     page_title="Panzer of the Sky",
     page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
     menu_items={"about": "Built by Surreal AI"},
 )
 
 colored_header(
     label="Panzer of the Sky",
     description="Ask the sky for an image and it may grant it",
-    color_name="blue-70",
+    color_name="blue-green-70",
 )
 
 st.logo(**LOGO_CONFIG)

@@ -16,7 +16,7 @@ from config import (
     CHATS_PATH,
     TEMPLATES_PATH,
     LOGO_CONFIG,
-    DB_PATH
+    DB_PATH,
 )
 
 
@@ -221,24 +221,16 @@ with st.sidebar:
     template_name = st.selectbox(
         "Prompt Template:", [item["name"] for item in st.session_state["templates"]]
     )
-    st.divider()
+    
     voice_enabled = st.checkbox("Voice")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
         st.markdown("# Hyperparameters")
         temp = st.slider("Temperature", 0.0, 1.0, 0.5, 0.1)
-        max_t = st.number_input("Max Tokens", 0, 15000, 20000, 10)
-        top_p = st.slider("Top P", 0.0, 1.0, 0.95, 0.01)
-        f_pen = st.slider("Frequency Penalty", 0.0, 2.0, 0.0, 0.1)
-        p_pen = st.slider("Presence Penalty", 0.0, 2.0, 0.0, 0.1)
         st.session_state["hyperparameters"] = {
             "temperature": temp,
-            "max_tokens": max_t,
-            "top_p": top_p,
-            "frequency_penalty": f_pen,
-            "presence_penalty": p_pen,
         }
-
+    st.divider()
     side_chats_container = st.container()
     side_chats_container.empty()
     with side_chats_container:
