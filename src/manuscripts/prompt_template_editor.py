@@ -1,9 +1,9 @@
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
-from tinydb import TinyDB, Query
 from data_class.prompt_template import PromptTemplate
-from tinydb.table import Document
-from config import LOGO_CONFIG, DB_PATH, ASSETS_PATH
+
+from config import LOGO_CONFIG, ASSETS_PATH
+from utils import initialize_database, load_templates, upsert_prompt_template
 
 
 st.set_page_config(
@@ -22,43 +22,9 @@ colored_header(
 
 st.logo(**LOGO_CONFIG)
 
-# # @st.cache_resource
 
-# def save_template():
-#     """Saves the current template to the database"""
-#     with db
-
-
-def initialize_database(user: str):
-    """Initialize the prompt template table."""
-
-    with TinyDB(DB_PATH) as db:
-        templates = [
-            {"user": user, "name": "None", "text": "{}"},
-            {
-                "user": user,
-                "name": "Summarize",
-                "text": "Summarize the following text: {}",
-            },
-            {
-                "user": user,
-                "name": "Jokes",
-                "text": "Give me jokes about the topic: {}",
-            },
-        ]
-
-        table = db.table("prompt_template")
-
-        existing_templates = table.search(
-            (Query().name == "None") and (Query().user == user)
-        )
-
-        if existing_templates:
-            return
-
-        table.insert_multiple(templates)
-
-    print("Prompt templates initialized.")
+def refresh_session_templates():
+    st.session_state["user_templates"] = load_templates(st.session_state["user"])
 
 
 def init_session_states() -> None:
@@ -72,62 +38,12 @@ def init_session_states() -> None:
 
     if "user_templates" not in st.session_state:
         initialize_database(st.session_state["user"])
-        with TinyDB(DB_PATH) as db:
-            results = db.table("prompt_template").search(
-                Query().user == st.session_state["user"]
-            )
-            # need to iterate to get doc_id
-            documents_with_ids = [
-                PromptTemplate(id=doc.doc_id, name=doc["name"], text=doc["text"])
-                for doc in results
-            ]
-            st.session_state["user_templates"] = documents_with_ids
+        refresh_session_templates()
 
 
 template_list_column, edit_template_column = st.columns(2)
 
 init_session_states()
-
-
-def load_templates(user: str):
-    st.session_state["user_templates"] = (
-        TinyDB(DB_PATH).table("prompt_templates").search((Query().user == user))
-    )
-
-
-def upsert_template(template: PromptTemplate):
-    """Updates or creates a template in the database."""
-
-    with TinyDB(DB_PATH) as db:
-        if template.id is None:
-
-            db.table("prompt_template").insert(
-                {
-                    "user": st.session_state["user"],
-                    "name": template.name,
-                    "text": template.text,
-                }
-            )
-            st.toast(f"Saved {template.name}", icon=":material/article:")
-        else:
-            db.table("prompt_template").upsert(
-                Document(
-                    {"name": template.name, "text": template.text}, doc_id=template.id
-                )
-            )
-            st.toast(f"Updated {template.name}", icon=":material/ink_pen:")
-
-
-def render_template():
-    return
-
-
-# def save_prompts_to_file(templates):
-#     """Write templates to file"""
-#     # TODO can this become completely universal for prompts and chats within the utils
-#     # TODO surround in try catch
-#     with open(f"{TEMPLATE_PATH}/{templates['user']}.json", "w", encoding=ENCODING) as f:
-#         f.write(json.dumps(templates))
 
 
 def populate_template():
@@ -178,9 +94,7 @@ with st.sidebar:
         populate_template()
 
 with edit_template_column:
-    title = st.text_input(
-        "Title", value=st.session_state["edit"].name if st.session_state["edit"] else ""
-    )
+    title = st.text_input("Title", value=st.session_state["edit"].name if st.session_state["edit"] else "")
     body = st.text_area(
         value=st.session_state["edit"].text if st.session_state["edit"] else "",
         label="Template (remember the {})",
@@ -198,9 +112,11 @@ with edit_template_column:
             "name": title,
             "text": body,
         }
-        upsert_template(
-            PromptTemplate(None, name=new_template["name"], text=new_template["text"])
+        upsert_prompt_template(
+            st.session_state["user"], PromptTemplate(None, name=new_template["name"], text=new_template["text"])
         )
+        st.toast(f"Saved {title}", icon=":material/article:")
+        refresh_session_templates()
 
     if update:
         updated_template = {
@@ -208,4 +124,6 @@ with edit_template_column:
             "name": title,
             "text": body,
         }
-        upsert_template(PromptTemplate(**updated_template))
+        upsert_prompt_template(st.session_state["user"], PromptTemplate(**updated_template))
+        st.toast(f"Updated {title}", icon=":material/ink_pen:")
+        refresh_session_templates()

@@ -1,8 +1,70 @@
 import os
 import json
 import random
+from tinydb import TinyDB, Query
+from config import DB_PATH
+from data_class.prompt_template import PromptTemplate
+from tinydb.table import Document
 
 ENCODING = "utf-8"
+
+
+def initialize_database(user: str):
+    """Initialize the prompt template table."""
+    if os.path.exists(f"{DB_PATH}/db.json"):
+        return
+
+    with TinyDB(DB_PATH) as db:
+        templates = [
+            {"user": user, "name": "None", "text": "{}"},
+            {
+                "user": user,
+                "name": "Summarize",
+                "text": "Summarize the following text: {}",
+            },
+            {
+                "user": user,
+                "name": "Jokes",
+                "text": "Give me jokes about the topic: {}",
+            },
+        ]
+
+        table = db.table("prompt_template")
+
+        existing_templates = table.search((Query().name == "None") and (Query().user == user))
+
+        if existing_templates:
+            return
+
+        table.insert_multiple(templates)
+
+    print("Prompt templates initialized.")
+
+
+def load_templates(user: str):
+    with TinyDB(DB_PATH) as db:
+        results = db.table("prompt_template").search(Query().user == user)
+        # iterate to get doc_id
+        documents_with_ids = [PromptTemplate(id=doc.doc_id, name=doc["name"], text=doc["text"]) for doc in results]
+        return documents_with_ids
+
+
+def upsert_prompt_template(user: str, template: PromptTemplate):
+    """Updates or creates a template in the database."""
+
+    with TinyDB(DB_PATH) as db:
+        if template.id is None:
+            db.table("prompt_template").insert(
+                {
+                    "user": user,
+                    "name": template.name,
+                    "text": template.text,
+                }
+            )
+        else:
+            db.table("prompt_template").upsert(
+                Document({"name": template.name, "text": template.text}, doc_id=template.id)
+            )
 
 
 def read_file(file_name: str):

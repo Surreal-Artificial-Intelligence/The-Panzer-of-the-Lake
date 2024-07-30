@@ -1,4 +1,4 @@
-
+from data_class.prompt_template import PromptTemplate
 
 class TinyDBAccess:
     """TinyDB access class"""

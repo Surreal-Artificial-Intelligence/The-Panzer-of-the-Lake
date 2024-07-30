@@ -16,11 +16,10 @@ from config import (
     CHATS_PATH,
     TEMPLATES_PATH,
     LOGO_CONFIG,
-    DB_PATH,
 )
 
 
-from utils import save_chats_to_file, load_data, log_retries
+from utils import save_chats_to_file, load_data, log_retries, initialize_database
 
 
 st.set_page_config(
@@ -68,7 +67,8 @@ def initialize_session_variables() -> None:
         st.session_state["chats"] = load_data("Emile", CHATS_PATH)
 
     if "templates" not in st.session_state:
-        st.session_state["templates"] = load_data("Emile", TEMPLATES_PATH)["templates"]
+        initialize_database(st.session_state["user"])
+        st.session_state["templates"] = 
 
     if "model" not in st.session_state:
         st.session_state["model"] = None
