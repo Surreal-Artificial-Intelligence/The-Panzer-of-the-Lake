@@ -9,6 +9,7 @@ class TinyDBAccess:
 
     def __init__(self, db_dir: str):
         self.db_path = f"{db_dir}/db.json"
+        self.db_dir = db_dir
 
     def initialize_database(self, user: str):
         """Initialize the prompt template table."""
@@ -16,7 +17,7 @@ class TinyDBAccess:
             return
 
         # create the db path if it does not exist
-        os.makedirs(self.db_path, exist_ok=True)
+        os.makedirs(self.db_dir, exist_ok=True)
 
         with TinyDB(self.db_path) as db:
             templates = [
