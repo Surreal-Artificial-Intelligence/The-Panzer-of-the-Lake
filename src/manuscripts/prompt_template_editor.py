@@ -2,8 +2,8 @@ import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from data_class.prompt_template import PromptTemplate
 
-from config import LOGO_CONFIG, ASSETS_PATH
-from utils import initialize_database, load_templates, upsert_prompt_template
+from config import LOGO_CONFIG, ASSETS_PATH, DB_PATH
+from tinydb_access import TinyDBAccess
 
 
 st.set_page_config(
@@ -23,8 +23,18 @@ colored_header(
 st.logo(**LOGO_CONFIG)
 
 
+@st.cache_resource
+def get_tinydb_client(db_path: str) -> TinyDBAccess:
+    """Instantiate and return the TinyDB access client"""
+    client = TinyDBAccess(db_path)
+    return client
+
+
+tinydb_client = get_tinydb_client(DB_PATH)
+
+
 def refresh_session_templates():
-    st.session_state["user_templates"] = load_templates(st.session_state["user"])
+    st.session_state["user_templates"] = tinydb_client.load_templates(st.session_state["user"])
 
 
 def init_session_states() -> None:
@@ -37,7 +47,7 @@ def init_session_states() -> None:
         st.session_state["edit"] = ""
 
     if "user_templates" not in st.session_state:
-        initialize_database(st.session_state["user"])
+        tinydb_client.initialize_database(st.session_state["user"])
         refresh_session_templates()
 
 
@@ -112,7 +122,7 @@ with edit_template_column:
             "name": title,
             "text": body,
         }
-        upsert_prompt_template(
+        tinydb_client.upsert_prompt_template(
             st.session_state["user"], PromptTemplate(None, name=new_template["name"], text=new_template["text"])
         )
         st.toast(f"Saved {title}", icon=":material/article:")
@@ -124,6 +134,6 @@ with edit_template_column:
             "name": title,
             "text": body,
         }
-        upsert_prompt_template(st.session_state["user"], PromptTemplate(**updated_template))
+        tinydb_client.upsert_prompt_template(st.session_state["user"], PromptTemplate(**updated_template))
         st.toast(f"Updated {title}", icon=":material/ink_pen:")
         refresh_session_templates()

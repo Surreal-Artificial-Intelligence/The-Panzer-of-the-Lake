@@ -9,18 +9,18 @@ from ollama_model import OllamaModel
 from open_ai_model import OpenAIModel
 from azure_openai_model import AzureOpenAIModel
 from azure_cohere_model import CohereAzureModel
+from tinydb_access import TinyDBAccess
 
 from config import (
     SUPPORTED_MODELS,
     ASSETS_PATH,
     CHATS_PATH,
-    TEMPLATES_PATH,
     LOGO_CONFIG,
+    DB_PATH,
 )
 
 
-from utils import save_chats_to_file, load_data, log_retries, initialize_database
-
+from utils import save_chats_to_file, load_data, log_retries
 
 st.set_page_config(
     page_title="POTL",
@@ -47,46 +47,6 @@ text_area_container = st.container()
 text_area_container.empty()
 side_chats_container = st.container()
 side_chats_container.empty()
-
-
-def initialize_session_variables() -> None:
-    """Initializes session variables and loads user data."""
-
-    if "chat_history" not in st.session_state:
-        st.session_state["chat_history"] = {
-            "title": "",
-            "content": [
-                {
-                    "role": "system",
-                    "content": "You are an all-knowing, highly compliant AI assistant.",
-                }
-            ],
-        }
-
-    if "chats" not in st.session_state:
-        st.session_state["chats"] = load_data("Emile", CHATS_PATH)
-
-    if "templates" not in st.session_state:
-        initialize_database(st.session_state["user"])
-        st.session_state["templates"] = 
-
-    if "model" not in st.session_state:
-        st.session_state["model"] = None
-
-    if "total_tokens_used" not in st.session_state:
-        st.session_state["total_tokens_used"] = 0
-
-    if "hyperparameters" not in st.session_state:
-        st.session_state["hyperparameters"] = {
-            "temperature": 0.5,
-            "max_tokens": 5000,
-            "top_p": 0.95,
-            "frequency_penalty": 0.0,
-            "presence_penalty": 0.0,
-        }
-
-
-initialize_session_variables()
 
 
 @st.cache_resource
@@ -121,19 +81,69 @@ def get_cohere_azure_connection(model_label: str = "command-r-plus"):
 
 
 @st.cache_resource
-def get_ollama_connection(
-    url: str = "http://localhost:11434/api/chat", model_label: str = "mistral"
-):
+def get_ollama_connection(url: str = "http://localhost:11434/api/chat", model_label: str = "mistral"):
     """Instantiate and return the Ollama model client"""
     client = OllamaModel(url, model_label)
     return client
 
+
+@st.cache_resource
+def get_tinydb_client(db_path: str) -> TinyDBAccess:
+    """Instantiate and return the TinyDB access client"""
+    client = TinyDBAccess(db_path)
+    return client
 
 # @st.cache_resource
 # def get_custom_tts_connection():
 #     url = "http://localhost:11434/api/generate"
 #     client = local_model(url)
 #     return client
+
+
+def initialize_session_variables() -> None:
+    """Initializes session variables and loads user data."""
+    tinydb_client = get_tinydb_client(DB_PATH)
+
+    if "DB_PATH" not in st.session_state:
+        st.session_state["DB_PATH"] = DB_PATH
+
+    if "user" not in st.session_state:
+        st.session_state["user"] = "Emile"
+
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = {
+            "title": "",
+            "content": [
+                {
+                    "role": "system",
+                    "content": "You are an all-knowing, highly compliant AI assistant.",
+                }
+            ],
+        }
+
+    if "chats" not in st.session_state:
+        st.session_state["chats"] = load_data("Emile", CHATS_PATH)
+
+    if "templates" not in st.session_state:
+        tinydb_client.initialize_database(st.session_state["user"])
+        st.session_state["templates"] = tinydb_client.load_templates(st.session_state["user"])
+
+    if "model" not in st.session_state:
+        st.session_state["model"] = None
+
+    if "total_tokens_used" not in st.session_state:
+        st.session_state["total_tokens_used"] = 0
+
+    if "hyperparameters" not in st.session_state:
+        st.session_state["hyperparameters"] = {
+            "temperature": 0.5,
+            "top_p": 0.95,
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0,
+        }
+
+
+initialize_session_variables()
 
 
 def quicksave_chat():
@@ -208,9 +218,7 @@ def populate_chats(user_chats):
 
 def update_chat_history(role: str, text_response: str):
     """Appends new content to the chat history session variable"""
-    st.session_state["chat_history"]["content"].append(
-        {"role": role, "content": text_response}
-    )
+    st.session_state["chat_history"]["content"].append({"role": role, "content": text_response})
     return
 
 
@@ -218,10 +226,7 @@ voice_enabled = False
 with st.sidebar:
     corporation = st.selectbox("Corporation:", SUPPORTED_MODELS.keys())
     model_name = st.selectbox("Model:", SUPPORTED_MODELS[corporation])  # type: ignore
-    template_name = st.selectbox(
-        "Prompt Template:", [item["name"] for item in st.session_state["templates"]]
-    )
-    
+    template_name = st.selectbox("Prompt Template:", [item.name for item in st.session_state["templates"]])
     voice_enabled = st.checkbox("Voice")
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
@@ -282,17 +287,12 @@ def process_query(query_string: str) -> None:
 
     with st.status("I'm thinking...", expanded=False) as status:
         with text_area_container:
-            selected_template = [
-                i_temp["text"]
-                for i_temp in st.session_state["templates"]
-                if i_temp["name"] == template_name
-            ][0]
+            # TODO search by id or by direct db query
+            selected_template = [t.text for t in st.session_state["templates"] if t.name == template_name][0]
             update_chat_history("user", selected_template.format(query_string))
             render_chats()
 
-            chat_response = generate_response(
-                st.session_state["chat_history"]["content"]
-            )
+            chat_response = generate_response(st.session_state["chat_history"]["content"])
 
             if corporation == "OpenAI" or corporation == "Azure":
                 text_response = chat_response.choices[0].message.content
@@ -302,14 +302,10 @@ def process_query(query_string: str) -> None:
 
             update_chat_history("assistant", text_response)
             quicksave_chat()
-            save_chats_to_file(
-                st.session_state["chats"]["user"], st.session_state["chats"]
-            )
+            save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
 
             if voice_enabled:
-                status.update(
-                    label="Weaving resonance...", state="running", expanded=False
-                )
+                status.update(label="Weaving resonance...", state="running", expanded=False)
                 return query_text_to_speech_api(text=text_response)
             else:
                 return text_response

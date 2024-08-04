@@ -21,7 +21,7 @@ SUPPORTED_MODELS = {
 CHATS_PATH = "./chats"
 TEMPLATES_PATH = "./templates"
 ASSETS_PATH = "./assets"
-DB_PATH = "./db/db.json"
+DB_PATH = "./db/"
 
 LOGO_CONFIG = {
     "image": f"{ASSETS_PATH}/surreal-logo-and-text.png",
