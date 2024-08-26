@@ -85,5 +85,29 @@ class AzureOpenAIModel:
                     time.sleep(sleep_time)  
                     retries += 1
 
+    def chat_raw(self,
+        messages,
+        model=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
+        max_retries=10,
+        initial_delay=1,
+        backoff_factor=2,
+        jitter=0.1,
+        max_delay=64,
+        on_retry=None,
+        **kwargs,) -> object:
+        """Sends a request to the model with exponential backoff retry policy using raw HTTP request.
+
+        Parameters
+        ----------
+        message : str
+            The message to send to the model.
+
+        Returns
+        -------
+        response : str
+            The response from the model.
+        """
+        raise NotImplementedError("This method is not implemented")
+
     # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     #     return client.embeddings.create(input = [text], model=model).data[0].embedding

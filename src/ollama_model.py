@@ -13,7 +13,7 @@ class OllamaModel:
         pass
 
     def chat(self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
-             max_delay=64, on_retry=None, **kwargs) -> str:
+             max_delay=64, **kwargs) -> str:
         """
         Sends a request to the model with exponential backoff retry policy.
         Parameters
@@ -40,9 +40,6 @@ class OllamaModel:
         response : str
             The response from the model.
         """
-
-        # message = message[-1]['content']
-        # [{'role': 'system', 'content': 'You are an AI assistant'}, {'role': 'user', 'content': 'Test'}]
         retries = 0
 
         while retries < max_retries:
@@ -51,6 +48,7 @@ class OllamaModel:
                     "model": self.model_name,
                     "stream": False,
                     "messages": messages[1:],  # does not have system role
+                    "images": [],
                 }
 
                 headers = {
@@ -65,13 +63,13 @@ class OllamaModel:
                     return data
                 else:
                     print("Error:", response.status_code, response.text)
-                    return None
+                    return "Error"
 
-            except Exception as e_rror:
+            except Exception as err:
                 if retries == max_retries - 1:
-                    raise e_rror  # Raise the exception if max_retries reached
+                    raise err
                 else:
                     sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
-                    print(log_retries(retries, sleep_time, e_rror))
+                    print(log_retries(retries, sleep_time, err))
                     time.sleep(sleep_time)  # Sleep before retrying
                     retries += 1

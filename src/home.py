@@ -1,4 +1,7 @@
+import io
+from io import StringIO
 import json
+from typing import List
 import requests
 import numpy as np
 
@@ -19,8 +22,9 @@ from config import (
     DB_PATH,
 )
 
+from PIL import Image
 
-from utils import save_chats_to_file, load_data, log_retries
+from utils import save_chats_to_file, load_data, log_retries, encode_image
 
 st.set_page_config(
     page_title="POTL",
@@ -93,6 +97,7 @@ def get_tinydb_client(db_path: str) -> TinyDBAccess:
     client = TinyDBAccess(db_path)
     return client
 
+
 # @st.cache_resource
 # def get_custom_tts_connection():
 #     url = "http://localhost:11434/api/generate"
@@ -133,6 +138,9 @@ def initialize_session_variables() -> None:
 
     if "total_tokens_used" not in st.session_state:
         st.session_state["total_tokens_used"] = 0
+
+    if "image" not in st.session_state:
+        st.session_state["image"] = {"file_name": "", "content": ""}
 
     if "hyperparameters" not in st.session_state:
         st.session_state["hyperparameters"] = {
@@ -216,10 +224,24 @@ def populate_chats(user_chats):
                 )
 
 
-def update_chat_history(role: str, text_response: str):
+def update_chat_history(chat_content: dict):
     """Appends new content to the chat history session variable"""
-    st.session_state["chat_history"]["content"].append({"role": role, "content": text_response})
+    st.session_state["chat_history"]["content"].append(chat_content)
     return
+
+
+@st.dialog("Attach your media.")
+def file_uploader():
+    file = st.file_uploader("Upload your media.", type=["png", "jpg"], key="media")
+    if file:
+        bytes_data = file.getvalue()
+        st.image(bytes_data, caption=file.name, use_column_width=True)
+
+    confirm = st.button("Confirm")
+    if confirm and file:
+        encoded_image = encode_image(bytes_data)
+        st.session_state["image"] = {"file_name": file.name, "content": encoded_image}
+        st.rerun()
 
 
 voice_enabled = False
@@ -227,7 +249,12 @@ with st.sidebar:
     corporation = st.selectbox("Corporation:", SUPPORTED_MODELS.keys())
     model_name = st.selectbox("Model:", SUPPORTED_MODELS[corporation])  # type: ignore
     template_name = st.selectbox("Prompt Template:", [item.name for item in st.session_state["templates"]])
+    st.divider()
+    image = st.button("Attach image", on_click=file_uploader)
+    st.write(st.session_state["image"]["file_name"])
+    st.divider()
     voice_enabled = st.checkbox("Voice")
+
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
         st.markdown("# Hyperparameters")
@@ -289,7 +316,21 @@ def process_query(query_string: str) -> None:
         with text_area_container:
             # TODO search by id or by direct db query
             selected_template = [t.text for t in st.session_state["templates"] if t.name == template_name][0]
-            update_chat_history("user", selected_template.format(query_string))
+            templated_message = selected_template.format(query_string)
+            # if image attached
+            if not st.session_state["image"]["content"] == "" and (corporation == "OpenAI" or corporation == "Azure"):
+                templated_message = [
+                    {"type": "text", "text": templated_message},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{st.session_state['image']['content']}"},
+                    },
+                ]
+                st.session_state["image"] = ""
+                update_chat_history({"role": "user", "content": templated_message})
+            else:
+                update_chat_history({"role": "user", "content": templated_message, "images": [st.session_state["image"]["content"]]})
+
             render_chats()
 
             chat_response = generate_response(st.session_state["chat_history"]["content"])
@@ -300,13 +341,14 @@ def process_query(query_string: str) -> None:
             else:
                 text_response = chat_response["message"]["content"]
 
-            update_chat_history("assistant", text_response)
+            update_chat_history({"role": "assistant", "content": text_response})
+
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
 
             if voice_enabled:
                 status.update(label="Weaving resonance...", state="running", expanded=False)
-                return query_text_to_speech_api(text=text_response)
+                # return query_text_to_speech_api(text=text_response)
             else:
                 return text_response
 

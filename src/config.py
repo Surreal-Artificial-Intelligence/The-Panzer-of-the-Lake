@@ -6,6 +6,7 @@ SUPPORTED_MODELS = {
     "OpenAI": [
         "gpt-3.5-turbo",
         "gpt-4o",
+        "gpt-4o-mini",
     ],
     "Cohere": [
         "command-r-plus",
@@ -14,6 +15,7 @@ SUPPORTED_MODELS = {
         "mistral",
         "samantha-mistral",
         "aya",
+        "bakllava"
     ],
 }
 

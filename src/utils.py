@@ -1,7 +1,8 @@
 import os
 import json
 import random
-
+from IPython.display import Image, display, Audio, Markdown
+import base64
 
 ENCODING = "utf-8"
 
@@ -159,3 +160,8 @@ def log_retries(retries, sleep_time, e_rror):
     """
     retry = f"Retry attempt {retries} failed. Waiting {sleep_time:.2f} seconds before trying again. Error: {e_rror}"
     return retry
+
+
+def encode_image(image):
+    """Open the image file and encode it as a base64 string"""
+    return base64.b64encode(image).decode("utf-8")
