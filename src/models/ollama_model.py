@@ -5,9 +5,9 @@ from utils import calculate_sleep_time, log_retries
 
 
 class OllamaModel:
-    def __init__(self, url: str, model_name: str):
+    def __init__(self, endpoint: str, model_name: str):
         self.model_name = model_name
-        self.url = url
+        self.endpoint = endpoint
 
     def test_connection(self):
         pass
@@ -55,21 +55,23 @@ class OllamaModel:
                     'Content-Type': 'application/json',
                 }
 
-                response = requests.post(self.url, headers=headers, data=json.dumps(data))
+                response = requests.post(self.endpoint, headers=headers, data=json.dumps(data))
 
                 if response.status_code == 200:
                     response_text = response.text
                     data = json.loads(response_text)
                     return data
                 else:
-                    print("Error:", response.status_code, response.text)
-                    return "Error"
+                    error_message = f"Error: {response.status_code} - {response.text}"
+                    return error_message
 
             except Exception as err:
                 if retries == max_retries - 1:
-                    raise err
+                    return f"Final retry failed: {err}"
                 else:
                     sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
                     print(log_retries(retries, sleep_time, err))
-                    time.sleep(sleep_time)  # Sleep before retrying
+                    time.sleep(sleep_time)
                     retries += 1
+
+        return "Failed to receive a valid response after retries."

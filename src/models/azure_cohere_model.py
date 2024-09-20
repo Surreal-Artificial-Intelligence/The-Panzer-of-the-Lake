@@ -1,38 +1,58 @@
 import time
-import streamlit as st
-from openai import AzureOpenAI
+import requests
+import logging
+from interfaces.base_model import BaseModel
 from utils import calculate_sleep_time
 
 
-class AzureOpenAIModel:
-    """Azure OpenAI Model class. This class is a wrapper around the Azure OpenAI API. It provides methods for sending
-    messages to the model, and retrieving responses from it. It also provides methods for logging retries and sleeping
-    before retrying. The class is initialized with an Azure OpenAI API key, version, endpoint, and model name.
-    """
+class CohereAzureModel(BaseModel):
+    """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
+    the Cohere Azure API and receiving responses from the API."""
 
     def __init__(
         self, api_key: str, api_version: str, azure_endpoint: str, model_name: str
     ):
-        self.azure_openai_client = AzureOpenAI(
-            api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint
-        )
+        self.api_key = api_key
+        self.azure_endpoint = azure_endpoint
+        self.api_version = api_version
+        if not self.api_key:
+            raise ValueError("No API key provided")
+
         self.model_name = model_name
 
     def test_connection(self):
         """Test the connection to the remote resource"""
-        response = self.azure_openai_client.chat.completions.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": "You are an AI assistant"},
-                {"role": "user", "content": "Hello"},
-            ],
-        )
-        return response
+        data = {
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}],
+            "temperature": 0.7,
+            "top_p": 1,
+            "stop": [],
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        try:
+            url = self.azure_endpoint
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_error:
+            logging.error("HTTP error occurred: %s", http_error)
+        except requests.exceptions.ConnectionError as conn_error:
+            logging.error("Connection error occurred: %s", conn_error)
+        except requests.exceptions.Timeout as timeout_error:
+            logging.error("Timeout error occurred: %s", timeout_error)
+        except requests.exceptions.RequestException as request_error:
+            logging.error("Error occurred while sending the request: %s", request_error)
+        except Exception as error:
+            raise error
 
     def chat(
         self,
         messages,
-        model=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
         max_retries=10,
         initial_delay=1,
         backoff_factor=2,
@@ -40,7 +60,7 @@ class AzureOpenAIModel:
         max_delay=64,
         on_retry=None,
         **kwargs,
-    ) -> object:
+    ) -> str:
         """Sends a request to the model with exponential backoff retry policy.
         Parameters
         ----------
@@ -70,44 +90,30 @@ class AzureOpenAIModel:
         retries = 0
         while retries < max_retries:
             try:
-                return self.azure_openai_client.chat.completions.create(
-                    model=self.model_name, messages=messages
+                url = self.azure_endpoint
+                response = requests.post(
+                    url,
+                    json={"messages": messages},
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.api_key}",
+                    },
                 )
+                response.raise_for_status()
+                return response.json()
             except Exception as error:
                 if retries == max_retries - 1:
-                    raise error  # Raise the exception if max_retries reached
+                    raise error
                 else:
                     sleep_time = calculate_sleep_time(
                         retries, initial_delay, backoff_factor, jitter, max_delay
                     )
                     if on_retry is not None:
                         on_retry(retries, sleep_time, error)
-                    time.sleep(sleep_time)  
+                    time.sleep(sleep_time)
                     retries += 1
 
-    def chat_raw(self,
-        messages,
-        model=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
-        max_retries=10,
-        initial_delay=1,
-        backoff_factor=2,
-        jitter=0.1,
-        max_delay=64,
-        on_retry=None,
-        **kwargs,) -> object:
-        """Sends a request to the model with exponential backoff retry policy using raw HTTP request.
-
-        Parameters
-        ----------
-        message : str
-            The message to send to the model.
-
-        Returns
-        -------
-        response : str
-            The response from the model.
-        """
-        raise NotImplementedError("This method is not implemented")
+        return "Maximum number of retries exceeded."
 
     # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     #     return client.embeddings.create(input = [text], model=model).data[0].embedding

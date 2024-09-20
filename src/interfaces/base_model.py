@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class IModel(ABC):
+class BaseModel(ABC):
     """Abstract class for all models"""
 
     @abstractmethod

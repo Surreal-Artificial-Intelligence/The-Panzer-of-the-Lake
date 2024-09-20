@@ -1,23 +1,22 @@
 import time
 import requests
 import logging
-from interfaces.IModel import IModel
+
+from interfaces.base_model import BaseModel
 from utils import calculate_sleep_time
 
 
-class CohereAzureModel(IModel):
-    """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
-    the Cohere Azure API and receiving responses from the API."""
+class GenericHttpsModel(BaseModel):
+    """A universal wrapper class to chat to any LLM via HTTPS POST calls."""
 
     def __init__(
-        self, api_key: str, api_version: str, azure_endpoint: str, model_name: str
+        self, api_key: str, api_version: str, endpoint: str, model_name: str
     ):
         self.api_key = api_key
-        self.azure_endpoint = azure_endpoint
-        self.api_version = api_version
         if not self.api_key:
             raise ValueError("No API key provided")
-
+        self.endpoint = endpoint
+        self.api_version = api_version
         self.model_name = model_name
 
     def test_connection(self):
@@ -35,7 +34,7 @@ class CohereAzureModel(IModel):
         }
 
         try:
-            url = self.azure_endpoint
+            url = self.endpoint
             response = requests.post(url, json=data, headers=headers)
             response.raise_for_status()
             return response.json()
@@ -87,12 +86,35 @@ class CohereAzureModel(IModel):
             The response from the model.
         """
 
+
+
+        url = 
+
+        payload = {
+            "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 50,
+            "repetition_penalty": 1
+        }
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": "Bearer {self.api_key}"
+        }
+
+        response = requests.post(url, json=payload, headers=headers)
+
+        print(response.text)
+
+
+
+
         retries = 0
         while retries < max_retries:
             try:
-                url = self.azure_endpoint
                 response = requests.post(
-                    url,
+                    self.endpoint,
                     json={"messages": messages},
                     headers={
                         "Content-Type": "application/json",

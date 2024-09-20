@@ -3,6 +3,9 @@ import json
 import random
 from IPython.display import Image, display, Audio, Markdown
 import base64
+from data_class.llmodel import LLModel
+from enums.organization import Organization
+
 
 ENCODING = "utf-8"
 
@@ -165,3 +168,19 @@ def log_retries(retries, sleep_time, e_rror):
 def encode_image(image):
     """Open the image file and encode it as a base64 string"""
     return base64.b64encode(image).decode("utf-8")
+
+
+def load_model_configs():
+    with open("models.json", "r") as file:
+        model_data = json.load(file)
+
+    ll_models = []
+    for organization, models in model_data.items():
+        for model in models:
+            ll_models.append(
+                LLModel(
+                    Organization[organization.upper()],
+                    model["model_name"],
+                    model["context_length"],
+                )
+            )

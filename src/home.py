@@ -1,17 +1,15 @@
-import io
-from io import StringIO
 import json
-from typing import List
 import requests
 import numpy as np
 
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
-from ollama_model import OllamaModel
-from open_ai_model import OpenAIModel
-from azure_openai_model import AzureOpenAIModel
-from azure_cohere_model import CohereAzureModel
+from models.ollama_model import OllamaModel
+from models.open_ai_model import OpenAIModel
+from models.azure_openai_model import AzureOpenAIModel
+from models.azure_cohere_model import CohereAzureModel
+from factory.model_factory import ModelFactory
 from tinydb_access import TinyDBAccess
 
 from config import (
@@ -21,8 +19,6 @@ from config import (
     LOGO_CONFIG,
     DB_PATH,
 )
-
-from PIL import Image
 
 from utils import save_chats_to_file, load_data, log_retries, encode_image
 
@@ -44,7 +40,6 @@ colored_header(
 st.logo(**LOGO_CONFIG)
 
 
-# Utility Functions
 chat_container = st.container()
 chat_container.empty()
 text_area_container = st.container()
@@ -54,41 +49,10 @@ side_chats_container.empty()
 
 
 @st.cache_resource
-def get_openai_connection(model_label: str = "gpt-4o"):
-    """Instantiate and return the OpenAI model client"""
-    client = OpenAIModel(api_key=st.secrets["OPENAI_API_KEY"], model_name=model_label)
-    return client
-
-
-@st.cache_resource
-def get_openai_azure_connection(model_label: str = "gpt-4o"):
-    """Instantiate and return the AzureOpenAI model client"""
-    client = AzureOpenAIModel(
-        api_key=st.secrets["AZURE_OPENAI_API_KEY"],
-        api_version=st.secrets["AZURE_API_VERSION"],
-        azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
-        model_name=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
-    )
-    return client
-
-
-@st.cache_resource
-def get_cohere_azure_connection(model_label: str = "command-r-plus"):
-    """Instantiate and return the CohereAzure model client"""
-    client = CohereAzureModel(
-        api_key=st.secrets["AZURE_COHERE_API_KEY"],
-        api_version=st.secrets["AZURE_API_VERSION"],
-        azure_endpoint=st.secrets["AZURE_COHERE_BASE"],
-        model_name=st.secrets["AZURE_COHERE_DEPLOYMENT"],
-    )
-    return client
-
-
-@st.cache_resource
-def get_ollama_connection(url: str = "http://localhost:11434/api/chat", model_label: str = "mistral"):
+def get_model_client(organization: str, model_label: str):
     """Instantiate and return the Ollama model client"""
-    client = OllamaModel(url, model_label)
-    return client
+    model_factory = ModelFactory()
+    return model_factory.get_model(organization, model_label)
 
 
 @st.cache_resource
@@ -292,21 +256,10 @@ def query_text_to_speech_api(text: str, lang: str = "en"):
         print(f"Exception: {str(e)}")
 
 
-corporation_clients = {
-    "OpenAI": get_openai_connection,
-    "Azure": get_openai_azure_connection,
-    "Ollama": get_ollama_connection,
-}
-
-
 def generate_response(messages):
     """Calls a specific model client to get a response"""
-
-    if corporation in corporation_clients:
-        client = corporation_clients.get(corporation, "Ollama")(model_label=model_name)  # type: ignore
-        return client.chat(messages, on_retry=log_retries)
-    else:
-        raise ValueError(f"Invalid model name: {model_name}")
+    client = get_model_client(corporation, model_name)
+    return client.chat(messages, on_retry=log_retries)
 
 
 def process_query(query_string: str) -> None:
@@ -329,7 +282,9 @@ def process_query(query_string: str) -> None:
                 st.session_state["image"] = ""
                 update_chat_history({"role": "user", "content": templated_message})
             else:
-                update_chat_history({"role": "user", "content": templated_message, "images": [st.session_state["image"]["content"]]})
+                update_chat_history(
+                    {"role": "user", "content": templated_message, "images": [st.session_state["image"]["content"]]}
+                )
 
             render_chats()
 
