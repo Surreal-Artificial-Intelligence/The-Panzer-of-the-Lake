@@ -2,9 +2,11 @@ import time
 import json
 import requests
 from utils import calculate_sleep_time, log_retries
+from data_class.model_response import ModelResponse
+from interfaces.base_model import BaseModel
 
 
-class OllamaModel:
+class OllamaModel(BaseModel):
     def __init__(self, endpoint: str, model_name: str):
         self.model_name = model_name
         self.endpoint = endpoint
@@ -12,8 +14,9 @@ class OllamaModel:
     def test_connection(self):
         pass
 
-    def chat(self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
-             max_delay=64, **kwargs) -> str:
+    def chat(
+        self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1, max_delay=64, **kwargs
+    ) -> ModelResponse:
         """
         Sends a request to the model with exponential backoff retry policy.
         Parameters
@@ -48,11 +51,10 @@ class OllamaModel:
                     "model": self.model_name,
                     "stream": False,
                     "messages": messages[1:],  # does not have system role
-                    "images": [],
                 }
 
                 headers = {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 }
 
                 response = requests.post(self.endpoint, headers=headers, data=json.dumps(data))
@@ -60,18 +62,26 @@ class OllamaModel:
                 if response.status_code == 200:
                     response_text = response.text
                     data = json.loads(response_text)
-                    return data
+                    return ModelResponse(
+                        data["message"], {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4}
+                    )
                 else:
                     error_message = f"Error: {response.status_code} - {response.text}"
-                    return error_message
+                    return ModelResponse(
+                        {"role": "assistant", "content": error_message},
+                        {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+                    )
 
             except Exception as err:
                 if retries == max_retries - 1:
-                    return f"Final retry failed: {err}"
+                    break
                 else:
                     sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
                     print(log_retries(retries, sleep_time, err))
                     time.sleep(sleep_time)
                     retries += 1
 
-        return "Failed to receive a valid response after retries."
+        return ModelResponse(
+            {"role": "assistant", "content": "Maximum number of retries exceeded."},
+            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+        )

@@ -3,15 +3,14 @@ import requests
 import logging
 
 from interfaces.base_model import BaseModel
+from data_class.model_response import ModelResponse
 from utils import calculate_sleep_time
 
 
 class GenericHttpsModel(BaseModel):
     """A universal wrapper class to chat to any LLM via HTTPS POST calls."""
 
-    def __init__(
-        self, api_key: str, api_version: str, endpoint: str, model_name: str
-    ):
+    def __init__(self, api_key: str, api_version: str, endpoint: str, model_name: str):
         self.api_key = api_key
         if not self.api_key:
             raise ValueError("No API key provided")
@@ -59,7 +58,7 @@ class GenericHttpsModel(BaseModel):
         max_delay=64,
         on_retry=None,
         **kwargs,
-    ) -> str:
+    ) -> ModelResponse:
         """Sends a request to the model with exponential backoff retry policy.
         Parameters
         ----------
@@ -86,56 +85,45 @@ class GenericHttpsModel(BaseModel):
             The response from the model.
         """
 
-
-
-        url = 
-
         payload = {
-            "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "model": self.model_name,
             "temperature": 0.2,
             "top_p": 0.7,
             "top_k": 50,
-            "repetition_penalty": 1
+            "repetition_penalty": 1,
+            "messages": messages,
         }
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "Authorization": "Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_key}",
         }
-
-        response = requests.post(url, json=payload, headers=headers)
-
-        print(response.text)
-
-
-
 
         retries = 0
         while retries < max_retries:
             try:
                 response = requests.post(
                     self.endpoint,
-                    json={"messages": messages},
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {self.api_key}",
-                    },
+                    json=payload,
+                    headers=headers,
                 )
                 response.raise_for_status()
-                return response.json()
+                response = response.json()
+                return ModelResponse(response["choices"][0]["message"], response["usage"])
             except Exception as error:
                 if retries == max_retries - 1:
                     raise error
                 else:
-                    sleep_time = calculate_sleep_time(
-                        retries, initial_delay, backoff_factor, jitter, max_delay
-                    )
+                    sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
                     if on_retry is not None:
                         on_retry(retries, sleep_time, error)
                     time.sleep(sleep_time)
                     retries += 1
 
-        return "Maximum number of retries exceeded."
+        return ModelResponse(
+            {"role": "assistant", "content": "Maximum number of retries exceeded."},
+            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+        )
 
     # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     #     return client.embeddings.create(input = [text], model=model).data[0].embedding

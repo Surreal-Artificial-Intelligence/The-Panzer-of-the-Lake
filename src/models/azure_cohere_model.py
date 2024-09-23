@@ -2,6 +2,7 @@ import time
 import requests
 import logging
 from interfaces.base_model import BaseModel
+from data_class.model_response import ModelResponse
 from utils import calculate_sleep_time
 
 
@@ -60,7 +61,7 @@ class CohereAzureModel(BaseModel):
         max_delay=64,
         on_retry=None,
         **kwargs,
-    ) -> str:
+    ) -> ModelResponse:
         """Sends a request to the model with exponential backoff retry policy.
         Parameters
         ----------
@@ -100,7 +101,8 @@ class CohereAzureModel(BaseModel):
                     },
                 )
                 response.raise_for_status()
-                return response.json()
+                response = response.json()
+                return ModelResponse(response["choices"][0]["message"], response["usage"])
             except Exception as error:
                 if retries == max_retries - 1:
                     raise error
@@ -113,7 +115,10 @@ class CohereAzureModel(BaseModel):
                     time.sleep(sleep_time)
                     retries += 1
 
-        return "Maximum number of retries exceeded."
+        return ModelResponse(
+            {"role": "assistant", "content": "Maximum number of retries exceeded."},
+            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+        )
 
     # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     #     return client.embeddings.create(input = [text], model=model).data[0].embedding

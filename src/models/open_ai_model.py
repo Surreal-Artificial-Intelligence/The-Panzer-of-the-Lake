@@ -1,23 +1,25 @@
 import time
 from openai import OpenAI
+from data_class.model_response import ModelResponse
 from utils import calculate_sleep_time, log_retries
+from interfaces.base_model import BaseModel
 
 
-class OpenAIModel:
+class OpenAIModel(BaseModel):
     def __init__(self, api_key: str, model_name: str):
-        self.openai_client = OpenAI(api_key=api_key)
+        self.client = OpenAI(api_key=api_key)
         self.model_name = model_name
 
     def test_connection(self):
-        response = self.openai_client.chat.completions.create(
+        response = self.client.chat.completions.create(
             model=self.model_name,
-            messages=[{"role": "system", "content": "You are an AI assistant"},
-                      {"role": "user", "content": "Hello"}]
+            messages=[{"role": "system", "content": "You are an AI assistant"}, {"role": "user", "content": "Hello"}],
         )
         return response
 
-    def chat(self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1,
-             max_delay=64, **kwargs) -> str:
+    def chat(
+        self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1, max_delay=64, **kwargs
+    ) -> ModelResponse:
         """
         Sends a request to the model with exponential backoff retry policy.
 
@@ -50,7 +52,15 @@ class OpenAIModel:
 
         while retries < max_retries:
             try:
-                return self.openai_client.chat.completions.create(model=self.model_name, messages=messages)
+                response = self.client.chat.completions.create(model=self.model_name, messages=messages)
+                return ModelResponse(
+                    {"message": response.choices[0].message.content or "None"},
+                    {
+                        "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                        "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                        "total_tokens": response.usage.total_tokens if response.usage else 0,
+                    },
+                )
             except Exception as e_rror:
                 if retries == max_retries - 1:
                     raise e_rror  # Raise the exception if max_retries reached
@@ -61,3 +71,8 @@ class OpenAIModel:
                         print(log_retries(retries, sleep_time, e_rror))
                     time.sleep(sleep_time)  # Sleep before retrying
                     retries += 1
+
+        return ModelResponse(
+            {"role": "assistant", "content": "Maximum number of retries exceeded."},
+            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+        )

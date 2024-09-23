@@ -2,6 +2,7 @@ import time
 import streamlit as st
 from openai import AzureOpenAI
 from interfaces.base_model import BaseModel
+from data_class.model_response import ModelResponse
 from utils import calculate_sleep_time
 
 
@@ -11,12 +12,8 @@ class AzureOpenAIModel(BaseModel):
     before retrying. The class is initialized with an Azure OpenAI API key, version, endpoint, and model name.
     """
 
-    def __init__(
-        self, api_key: str, api_version: str, azure_endpoint: str, model_name: str
-    ):
-        self.azure_openai_client = AzureOpenAI(
-            api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint
-        )
+    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
+        self.azure_openai_client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint)
         self.model_name = model_name
 
     def test_connection(self):
@@ -41,7 +38,7 @@ class AzureOpenAIModel(BaseModel):
         max_delay=64,
         on_retry=None,
         **kwargs,
-    ) -> object:
+    ) -> ModelResponse:
         """Sends a request to the model with exponential backoff retry policy.
         Parameters
         ----------
@@ -71,22 +68,32 @@ class AzureOpenAIModel(BaseModel):
         retries = 0
         while retries < max_retries:
             try:
-                return self.azure_openai_client.chat.completions.create(
-                    model=self.model_name, messages=messages
+                response = self.azure_openai_client.chat.completions.create(model=self.model_name, messages=messages)
+                return ModelResponse(
+                    {"message": response.choices[0].message.content or "None"},
+                    {
+                        "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                        "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                        "total_tokens": response.usage.total_tokens if response.usage else 0,
+                    },
                 )
             except Exception as error:
                 if retries == max_retries - 1:
                     raise error  # Raise the exception if max_retries reached
                 else:
-                    sleep_time = calculate_sleep_time(
-                        retries, initial_delay, backoff_factor, jitter, max_delay
-                    )
+                    sleep_time = calculate_sleep_time(retries, initial_delay, backoff_factor, jitter, max_delay)
                     if on_retry is not None:
                         on_retry(retries, sleep_time, error)
                     time.sleep(sleep_time)
                     retries += 1
 
-    def chat_raw(self,
+        return ModelResponse(
+            {"role": "assistant", "content": "Maximum number of retries exceeded."},
+            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+        )
+
+    def chat_raw(
+        self,
         messages,
         model=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
         max_retries=10,
@@ -95,7 +102,8 @@ class AzureOpenAIModel(BaseModel):
         jitter=0.1,
         max_delay=64,
         on_retry=None,
-        **kwargs,) -> object:
+        **kwargs,
+    ) -> object:
         """Sends a request to the model with exponential backoff retry policy using raw HTTP request.
 
         Parameters
