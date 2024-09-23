@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from data_class.model_response import ModelResponse
 
 
 class BaseModel(ABC):
@@ -13,5 +14,5 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def chat(self) -> str:
+    def chat(self) -> ModelResponse:
         pass

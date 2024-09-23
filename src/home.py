@@ -10,6 +10,8 @@ from models.open_ai_model import OpenAIModel
 from models.azure_openai_model import AzureOpenAIModel
 from models.azure_cohere_model import CohereAzureModel
 from factory.model_factory import ModelFactory
+from data_class.model_response import ModelResponse
+from interfaces.base_model import BaseModel
 from tinydb_access import TinyDBAccess
 
 from config import (
@@ -49,10 +51,10 @@ side_chats_container.empty()
 
 
 @st.cache_resource
-def get_model_client(organization: str, model_label: str):
-    """Instantiate and return the Ollama model client"""
+def get_model_client(model_provider: str, model_label: str) -> BaseModel:
+    """Instantiate and return the model client using the ModelFactory"""
     model_factory = ModelFactory()
-    return model_factory.get_model(organization, model_label)
+    return model_factory.get_model(model_provider, model_label)
 
 
 @st.cache_resource
@@ -210,8 +212,8 @@ def file_uploader():
 
 voice_enabled = False
 with st.sidebar:
-    corporation = st.selectbox("Corporation:", SUPPORTED_MODELS.keys())
-    model_name = st.selectbox("Model:", SUPPORTED_MODELS[corporation])  # type: ignore
+    model_provider = st.selectbox("Provider:", SUPPORTED_MODELS.keys()) or "Ollama"
+    model_name = st.selectbox("Model:", SUPPORTED_MODELS[model_provider]) or "Ollama"
     template_name = st.selectbox("Prompt Template:", [item.name for item in st.session_state["templates"]])
     st.divider()
     image = st.button("Attach image", on_click=file_uploader)
@@ -235,34 +237,51 @@ with st.sidebar:
 
 def query_text_to_speech_api(text: str, lang: str = "en"):
     """Gets speech audio from tts endpoint"""
-    api_url = "http://localhost:8000/text-to-speech"
-    try:
-        # Sending a POST request
-        data = {"text": text, "lang": lang}
+    raise NotImplementedError()
+    # api_url = "http://localhost:8000/text-to-speech"
+    # try:
+    #     # Sending a POST request
+    #     data = {"text": text, "lang": lang}
 
-        tts_response = requests.post(api_url, headers="headers", json=data)
+    #     tts_response = requests.post(api_url, headers="headers", json=data)
 
-        if tts_response.status_code == 200:
-            # Decode the binary data to a string
-            json_string = tts_response.content.decode("utf-8")
-            # Convert the JSON string to a Python list
-            audio_list = json.loads(json_string)
-            audio_array = np.array(audio_list)
-            return audio_array
-        else:
-            print(f"Error: {tts_response.status_code} - {tts_response.text}")
-    except Exception as e:
-        # Print an error message in case of an exception
-        print(f"Exception: {str(e)}")
-
-
-def generate_response(messages):
-    """Calls a specific model client to get a response"""
-    client = get_model_client(corporation, model_name)
-    return client.chat(messages, on_retry=log_retries)
+    #     if tts_response.status_code == 200:
+    #         # Decode the binary data to a string
+    #         json_string = tts_response.content.decode("utf-8")
+    #         # Convert the JSON string to a Python list
+    #         audio_list = json.loads(json_string)
+    #         audio_array = np.array(audio_list)
+    #         return audio_array
+    #     else:
+    #         print(f"Error: {tts_response.status_code} - {tts_response.text}")
+    # except Exception as e:
+    #     # Print an error message in case of an exception
+    #     print(f"Exception: {str(e)}")
 
 
-def process_query(query_string: str) -> None:
+def evaluate_image(templated_message: str):
+    if st.session_state["image"]["content"] and (model_provider in ["OpenAI", "Azure"]):
+        message_data = {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": templated_message},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{st.session_state['image']['content']}"},
+                },
+            ],
+        }
+        st.session_state["image"] = ""
+    else:
+        message_data = (
+            {"role": "user", "content": templated_message}
+            if st.session_state["image"]["content"] == ""
+            else {"role": "user", "content": templated_message, "images": [st.session_state["image"]["content"]]}
+        )
+    return message_data
+
+
+def process_query(query_string: str) -> str:
     """Handles user input"""
 
     with st.status("I'm thinking...", expanded=False) as status:
@@ -270,42 +289,28 @@ def process_query(query_string: str) -> None:
             # TODO search by id or by direct db query
             selected_template = [t.text for t in st.session_state["templates"] if t.name == template_name][0]
             templated_message = selected_template.format(query_string)
-            # if image attached
-            if not st.session_state["image"]["content"] == "" and (corporation == "OpenAI" or corporation == "Azure"):
-                templated_message = [
-                    {"type": "text", "text": templated_message},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{st.session_state['image']['content']}"},
-                    },
-                ]
-                st.session_state["image"] = ""
-                update_chat_history({"role": "user", "content": templated_message})
-            else:
-                update_chat_history(
-                    {"role": "user", "content": templated_message, "images": [st.session_state["image"]["content"]]}
-                )
 
+            # if image attached
+            message_data = evaluate_image(templated_message)
+            update_chat_history(message_data)
             render_chats()
 
-            chat_response = generate_response(st.session_state["chat_history"]["content"])
-
-            if corporation == "OpenAI" or corporation == "Azure":
-                text_response = chat_response.choices[0].message.content
-                st.session_state["total_tokens_used"] = chat_response.usage.total_tokens
-            else:
-                text_response = chat_response["message"]["content"]
-
-            update_chat_history({"role": "assistant", "content": text_response})
+            client = get_model_client(model_provider, model_name)
+            model_response: ModelResponse = client.chat(
+                messages=st.session_state["chat_history"]["content"], on_retry=log_retries
+            )
+            st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
+            print(model_response.message, client)
+            update_chat_history(model_response.message)
 
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
 
             if voice_enabled:
                 status.update(label="Weaving resonance...", state="running", expanded=False)
-                # return query_text_to_speech_api(text=text_response)
+                return query_text_to_speech_api(text=model_response.message["content"])
             else:
-                return text_response
+                return model_response.message["content"]
 
 
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
