@@ -292,15 +292,19 @@ def process_query(query_string: str) -> str:
 
             # if image attached
             message_data = evaluate_image(templated_message)
-            update_chat_history(message_data)
+
+            # so that massive encodings don't destroy the db
+            working_chat_hist = st.session_state["chat_history"]["content"].copy()
+            working_chat_hist.append(message_data)
+            update_chat_history({"role": "user", "content": templated_message})
             render_chats()
 
             client = get_model_client(model_provider, model_name)
             model_response: ModelResponse = client.chat(
-                messages=st.session_state["chat_history"]["content"], on_retry=log_retries
+                messages=working_chat_hist, on_retry=log_retries
             )
             st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
-            print(model_response.message, client)
+
             update_chat_history(model_response.message)
 
             quicksave_chat()

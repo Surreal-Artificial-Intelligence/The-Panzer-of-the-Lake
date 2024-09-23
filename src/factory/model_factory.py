@@ -16,6 +16,7 @@ class ModelFactory:
                 api_version=st.secrets["AZURE_API_VERSION"],
                 azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
                 model_name=model_name,
+                default_headers={"Ocp-Apim-Subscription-Region": st.secrets["AZURE_OPENAI_API_KEY"]}
             )
         elif model_provider == "Cohere":
             return CohereAzureModel(

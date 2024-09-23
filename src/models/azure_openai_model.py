@@ -12,8 +12,10 @@ class AzureOpenAIModel(BaseModel):
     before retrying. The class is initialized with an Azure OpenAI API key, version, endpoint, and model name.
     """
 
-    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
-        self.azure_openai_client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint)
+    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str, **kwargs):
+        self.azure_openai_client = AzureOpenAI(
+            api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint, **kwargs
+        )
         self.model_name = model_name
 
     def test_connection(self):
