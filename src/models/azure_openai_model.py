@@ -72,7 +72,7 @@ class AzureOpenAIModel(BaseModel):
             try:
                 response = self.azure_openai_client.chat.completions.create(model=self.model_name, messages=messages)
                 return ModelResponse(
-                    {"message": response.choices[0].message.content or "None"},
+                    {"role": "assistant", "content": response.choices[0].message.content or "None"},
                     {
                         "completion_tokens": response.usage.completion_tokens if response.usage else 0,
                         "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
