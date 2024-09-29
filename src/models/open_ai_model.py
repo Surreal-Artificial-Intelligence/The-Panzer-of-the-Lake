@@ -17,6 +17,10 @@ class OpenAIModel(BaseModel):
         )
         return response
 
+    def transcribe(self, audio) -> str:
+        """Transcribe audio using Open AI whisper v3"""
+        raise NotImplementedError()
+
     def chat(
         self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1, max_delay=64, **kwargs
     ) -> ModelResponse:

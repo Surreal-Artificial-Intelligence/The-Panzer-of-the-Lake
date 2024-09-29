@@ -11,7 +11,9 @@ SUPPORTED_MODELS = {
         "command-r-plus",
     ],
     "TogetherAI": [
-        "NousResearch/Hermes-3-Llama-3.1-405B-Turbo",
+        "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
     ],
     "Ollama": ["mistral", "samantha-mistral", "aya", "bakllava"],
 }
