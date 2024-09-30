@@ -1,14 +1,6 @@
-import json
-import requests
-import numpy as np
-
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
-from models.ollama_model import OllamaModel
-from models.open_ai_model import OpenAIModel
-from models.azure_openai_model import AzureOpenAIModel
-from models.azure_cohere_model import CohereAzureModel
 from factory.model_factory import ModelFactory
 from data_class.model_response import ModelResponse
 from interfaces.base_model import BaseModel

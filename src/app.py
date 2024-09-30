@@ -1,10 +1,5 @@
 import streamlit as st
 
-chat_page = st.Page(
-    "home.py",
-    title="Chat",
-    icon=":material/chat:",
-)
 
 prompt_templates_page = st.Page(
     "manuscripts/prompt_template_editor.py",
@@ -12,14 +7,24 @@ prompt_templates_page = st.Page(
     icon=":material/edit_note:",
 )
 
-image_page = st.Page(
-    "manuscripts/images.py",
-    title="Image Generator",
-    icon=":material/image:",
-)
+generate = [
+    st.Page(
+        "home.py",
+        title="Chat",
+        icon=":material/chat:",
+    ),
+    st.Page(
+        "manuscripts/images.py",
+        title="Image Generator",
+        icon=":material/image:",
+    ),
+    st.Page(
+        "manuscripts/transcribe.py",
+        title="Speech-to-Text",
+        icon=":material/mic:",
+    ),
+]
 
-pg = st.navigation({
-    "Generate": [chat_page, image_page],
-    "Customize":  [prompt_templates_page]
-})
+
+pg = st.navigation({"Generate": generate, "Customize": [prompt_templates_page]})
 pg.run()
