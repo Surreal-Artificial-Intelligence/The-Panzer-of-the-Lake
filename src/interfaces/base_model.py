@@ -14,5 +14,5 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def chat(self) -> ModelResponse:
+    def chat(self, messages) -> ModelResponse:
         pass

@@ -1,6 +1,7 @@
 from models.azure_cohere_model import CohereAzureModel
 from models.azure_openai_model import AzureOpenAIModel
 from models.generic_https_model import GenericHttpsModel
+from models.togetherai_model import TogetherAIModel
 from models.ollama_model import OllamaModel
 from models.open_ai_model import OpenAIModel
 from models.transformers_model import TransformersModel
@@ -18,7 +19,7 @@ class ModelFactory:
                 api_version=st.secrets["AZURE_API_VERSION"],
                 azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
                 model_name=model_name,
-                default_headers={"Ocp-Apim-Subscription-Key": st.secrets["AZURE_OPENAI_API_KEY"]}
+                default_headers={"Ocp-Apim-Subscription-Key": st.secrets["AZURE_OPENAI_API_KEY"]},
             )
         elif model_provider == "Cohere":
             return CohereAzureModel(
@@ -33,10 +34,9 @@ class ModelFactory:
                 model_name=model_name,
             )
         elif model_provider == "TogetherAI":
-            return GenericHttpsModel(
+            return TogetherAIModel(
                 api_key=st.secrets["TOGETHER_AI_API_KEY"],
-                api_version=st.secrets["AZURE_API_VERSION"],
-                endpoint=st.secrets["TOGETHER_AI_BASE"],
+                base_url=st.secrets["TOGETHER_AI_BASE"],
                 model_name=model_name,
             )
         elif model_provider == "Ollama":

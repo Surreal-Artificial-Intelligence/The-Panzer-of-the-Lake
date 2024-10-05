@@ -14,15 +14,8 @@ from config import (
     DB_PATH,
 )
 
-from utils import save_chats_to_file, load_data, log_retries, encode_image
+from utils import save_chats_to_file, load_data, encode_image
 
-st.set_page_config(
-    page_title="POTL",
-    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
-    layout="wide",
-    initial_sidebar_state="auto",
-    menu_items={"about": "Built by Surreal AI"},
-)
 
 colored_header(
     label="Panzer of the Lake",
@@ -31,7 +24,7 @@ colored_header(
 )
 
 
-st.logo(**LOGO_CONFIG)
+
 
 
 chat_container = st.container()
@@ -54,13 +47,6 @@ def get_tinydb_client(db_path: str) -> TinyDBAccess:
     """Instantiate and return the TinyDB access client"""
     client = TinyDBAccess(db_path)
     return client
-
-
-# @st.cache_resource
-# def get_custom_tts_connection():
-#     url = "http://localhost:11434/api/generate"
-#     client = local_model(url)
-#     return client
 
 
 def initialize_session_variables() -> None:
@@ -158,7 +144,7 @@ def populate_chats(user_chats):
 
     for i, item in enumerate(user_chats["chats"]):
         chat_tile_container = st.container()
-        col_load, col_delete = st.columns(2)
+        col_load, col_delete = st.columns((3, 1))
         with chat_tile_container:
             if item:
                 colored_header(
@@ -167,18 +153,20 @@ def populate_chats(user_chats):
                     color_name="blue-green-70",
                 )
                 col_load.button(
-                    "Load",
+                    "",
                     on_click=load_conversation,
                     args=(i,),
                     key=i,
                     use_container_width=True,
+                    icon=":material/arrow_right_alt:"
                 )
                 col_delete.button(
-                    "🗑",
+                    "",
                     on_click=delete_conversation,
                     args=(i,),
                     key=i + 10000,
                     use_container_width=True,
+                    icon=":material/delete:",
                 )
 
 
@@ -292,16 +280,14 @@ def process_query(query_string: str) -> str:
             render_chats()
 
             client = get_model_client(model_provider, model_name)
-            model_response: ModelResponse = client.chat(
-                messages=working_chat_hist, on_retry=log_retries
-            )
+            model_response: ModelResponse = client.chat(working_chat_hist)
             st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
 
             update_chat_history(model_response.message)
 
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
-
+            print(model_response)
             if voice_enabled:
                 status.update(label="Weaving resonance...", state="running", expanded=False)
                 return query_text_to_speech_api(text=model_response.message["content"])

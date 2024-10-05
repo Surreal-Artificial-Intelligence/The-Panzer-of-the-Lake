@@ -43,7 +43,7 @@ class TransformersModel(BaseModel):
         )
         self.pipe = pipe
 
-    def transcribe(self, audio, model_path) -> str:
+    def transcribe(self, audio, model_path) -> dict:
         """Transcribe audio using Open AI whisper v3 and the transformers library"""
 
         if not self.pipe:
@@ -51,4 +51,4 @@ class TransformersModel(BaseModel):
 
         result = self.pipe(audio)
 
-        return str(result)
+        return result

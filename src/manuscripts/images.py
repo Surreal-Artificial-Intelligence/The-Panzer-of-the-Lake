@@ -1,20 +1,16 @@
-import json
-
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
-from openai import AzureOpenAI
+
+from factory.model_factory import ModelFactory
+from data_class.model_response import ModelResponse
+from interfaces.base_model import BaseModel
+from tinydb_access import TinyDBAccess
+from models.togetherai_model import TogetherAIModel
 
 from config import (
     ASSETS_PATH,
     LOGO_CONFIG,
-)
-
-st.set_page_config(
-    page_title="Panzer of the Sky",
-    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
-    layout="wide",
-    initial_sidebar_state="auto",
-    menu_items={"about": "Built by Surreal AI"},
+    SUPPORTED_IMAGE_MODELS,
 )
 
 colored_header(
@@ -22,9 +18,6 @@ colored_header(
     description="Ask the sky for an image and it may grant it",
     color_name="blue-green-70",
 )
-
-st.logo(**LOGO_CONFIG)
-
 
 def set_session_variables() -> None:
     """Set the session chat and output, containers."""
@@ -35,26 +28,40 @@ def set_session_variables() -> None:
 set_session_variables()
 
 
+with st.sidebar:
+    model_provider = st.selectbox("Provider:", SUPPORTED_IMAGE_MODELS.keys()) or "Ollama"
+    model_name = st.selectbox("Model:", SUPPORTED_IMAGE_MODELS[model_provider]) or "Ollama"
+
+
 @st.cache_resource
-def get_openai_azure_connection():
-    """Instantiate and return the AzureOpenAI model client"""
-    client = AzureOpenAI(
-        api_key=st.secrets["AZURE_OPENAI_API_KEY"],
-        api_version=st.secrets["AZURE_API_VERSION"],
-        azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
-    )
-    return client
+def get_model_client(model_provider: str, model_label: str) -> BaseModel:
+    """Instantiate and return the model client using the ModelFactory"""
+    model_factory = ModelFactory()
+    model_client = model_factory.get_model(model_provider, model_label)
+    return model_client
 
 
-def generate_image(image_prompt: str, model: str = "Dalle3"):
-    """Generate image from prompt using model"""
-    client = get_openai_azure_connection()
-    result = client.images.generate(model=model, prompt=image_prompt, n=1)
-    return json.loads(result.model_dump_json())["data"][0]["url"]
+# TODO: Save images to DB
 
 
-image_prompt = st.text_input("An image prompt")
-button = st.button("Generate")
-if button:
-    image_link = generate_image(image_prompt)
-    st.image(image=image_link, caption=image_prompt)
+def generate_image(image_prompt: str):
+    """Generate image from prompt using model. Returns a URL"""
+    client = get_model_client(model_provider, model_name)
+
+    # satisfy type checker
+    if isinstance(client, TogetherAIModel):
+        response = client.image(prompt=image_prompt)
+    else:
+        raise TypeError(f"Expected a {TogetherAIModel} instance, but received a {type(client)}")
+
+    return str(response.data[0].url)
+
+
+prompt = st.text_input("An image prompt")
+
+confirm = st.button("Generate", icon=":material/circle:")
+if confirm and prompt:
+    with st.status("I'm thinking...", expanded=False) as status:
+        image = generate_image(prompt)
+
+    st.image(image=image, caption=prompt)

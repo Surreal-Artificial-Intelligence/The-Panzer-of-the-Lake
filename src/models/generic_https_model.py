@@ -125,5 +125,33 @@ class GenericHttpsModel(BaseModel):
             {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
         )
 
+    def image(self, model_name: str):
+        payload = {
+            "prompt": "cat floating in space, cinematic",
+            "model": model_name,
+            "steps": 20,
+            "n": 1,
+            "height": 1024,
+            "width": 1024,
+        }
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        try:
+            response = requests.post(
+                self.endpoint,
+                json=payload,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+            return response
+        except Exception as error:
+            print(error)
+
+
     # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     #     return client.embeddings.create(input = [text], model=model).data[0].embedding

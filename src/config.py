@@ -15,7 +15,21 @@ SUPPORTED_MODELS = {
         "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
     ],
-    "Ollama": ["mistral", "samantha-mistral", "aya", "bakllava"],
+    "Ollama": [
+        "mistral",
+        "samantha-mistral",
+        "aya",
+        "bakllava"
+    ],
+}
+
+
+SUPPORTED_IMAGE_MODELS = {
+    "TogetherAI": [
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        "black-forest-labs/FLUX.1-schnell-Free",
+        "black-forest-labs/FLUX.1.1-pro",
+    ],
 }
 
 models = {

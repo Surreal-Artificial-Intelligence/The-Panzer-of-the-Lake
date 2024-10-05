@@ -1,5 +1,21 @@
 import streamlit as st
 
+from config import (
+    SUPPORTED_MODELS,
+    ASSETS_PATH,
+    CHATS_PATH,
+    LOGO_CONFIG,
+    DB_PATH,
+)
+
+st.set_page_config(
+    page_title="POTL",
+    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
+    layout="wide",
+    initial_sidebar_state="auto",
+    menu_items={"about": "Built by Surreal AI"},
+)
+st.logo(**LOGO_CONFIG)
 
 prompt_templates_page = st.Page(
     "manuscripts/prompt_template_editor.py",
@@ -7,7 +23,7 @@ prompt_templates_page = st.Page(
     icon=":material/edit_note:",
 )
 
-generate = [
+generate_section = [
     st.Page(
         "home.py",
         title="Chat",
@@ -15,16 +31,16 @@ generate = [
     ),
     st.Page(
         "manuscripts/images.py",
-        title="Image Generator",
+        title="Image",
         icon=":material/image:",
     ),
     st.Page(
         "manuscripts/transcribe.py",
-        title="Speech-to-Text",
+        title="Speech",
         icon=":material/mic:",
     ),
 ]
 
 
-pg = st.navigation({"Generate": generate, "Customize": [prompt_templates_page]})
+pg = st.navigation({"Generate": generate_section, "Customize": [prompt_templates_page]})
 pg.run()
