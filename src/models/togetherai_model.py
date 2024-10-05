@@ -34,7 +34,7 @@ class TogetherAIModel(BaseModel):
         response : ModelResponse
             The response from the model.
         """
-
+        response = None
         try:
             response = self.client.chat.completions.create(model=self.model_name, messages=messages)
             return ModelResponse(
@@ -47,7 +47,14 @@ class TogetherAIModel(BaseModel):
             )
         except Exception as error:
             print(error)
-            return ModelResponse({"role": "assistant", "content": str(error)}, {})
+            return ModelResponse(
+                {"role": "assistant", "content": str(error)},
+                {
+                    "completion_tokens": 0,
+                    "prompt_tokens": 0,
+                    "total_tokens": 0,
+                },
+            )
 
     def image(self, prompt: str):
         """Generate an image using the OpenAI library with Together AI"""

@@ -3,27 +3,8 @@ import os
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
-from config import (
-    ASSETS_PATH,
-    LOGO_CONFIG,
-)
 
-
-# Streamlit Page Configuration
-st.set_page_config(
-    page_title="Token Counter",
-    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={"about": "Built by Surreal AI"},
-)
-
-
-colored_header(
-    label="Artifact Analyzer", description="Give me the docs", color_name="red-70"
-)
-
-st.logo(**LOGO_CONFIG)
+colored_header(label="Artifact Analyzer", description="Give me the docs", color_name="red-70")
 
 
 @st.cache_data
@@ -53,9 +34,7 @@ if submit:
 
             doc = "csv"
             data = load_csv_data(file)
-            agent = create_csv_agent(
-                OpenAI(temperature=0), "uploaded_file.csv", verbose=True
-            )
+            agent = create_csv_agent(OpenAI(temperature=0), "uploaded_file.csv", verbose=True)
             st.dataframe(data)
 
         elif file.type == "text/plain":

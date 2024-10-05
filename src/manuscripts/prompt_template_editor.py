@@ -2,25 +2,15 @@ import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from data_class.prompt_template import PromptTemplate
 
-from config import LOGO_CONFIG, ASSETS_PATH, DB_PATH
+from config import DB_PATH
 from tinydb_access import TinyDBAccess
 
-
-st.set_page_config(
-    page_title="POTL",
-    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
-    layout="wide",
-    initial_sidebar_state="auto",
-    menu_items={"about": "Built by Surreal AI"},
-)
 
 colored_header(
     label="Panzer Prompt Template Editor",
     description="Edit your prompt templates here to make asking the panzer the same questions easier.",
     color_name="blue-green-70",
 )
-
-st.logo(**LOGO_CONFIG)
 
 
 @st.cache_resource

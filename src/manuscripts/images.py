@@ -2,14 +2,12 @@ import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
 from factory.model_factory import ModelFactory
-from data_class.model_response import ModelResponse
+from data_class.image_response import ImageResponse
 from interfaces.base_model import BaseModel
 from tinydb_access import TinyDBAccess
 from models.togetherai_model import TogetherAIModel
 
 from config import (
-    ASSETS_PATH,
-    LOGO_CONFIG,
     SUPPORTED_IMAGE_MODELS,
 )
 
@@ -18,6 +16,7 @@ colored_header(
     description="Ask the sky for an image and it may grant it",
     color_name="blue-green-70",
 )
+
 
 def set_session_variables() -> None:
     """Set the session chat and output, containers."""

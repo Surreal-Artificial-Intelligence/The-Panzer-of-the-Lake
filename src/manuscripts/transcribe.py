@@ -9,30 +9,11 @@ from tinydb_access import TinyDBAccess
 from models.transformers_model import TransformersModel
 
 
-from config import (
-    SUPPORTED_MODELS,
-    ASSETS_PATH,
-    CHATS_PATH,
-    LOGO_CONFIG,
-    DB_PATH,
-)
-
-st.set_page_config(
-    page_title="POTL",
-    page_icon=f"{ASSETS_PATH}/surreal-logo.jpg",
-    layout="wide",
-    initial_sidebar_state="auto",
-    menu_items={"about": "Built by Surreal AI"},
-)
-
 colored_header(
     label="Panzer of the Library",
     description="Welcome to the archives, give the panzer your voice so it may scribe it.",
     color_name="blue-green-70",
 )
-
-
-st.logo(**LOGO_CONFIG)
 
 
 def initialize_session_variables() -> None:

@@ -6,13 +6,7 @@ from data_class.model_response import ModelResponse
 from interfaces.base_model import BaseModel
 from tinydb_access import TinyDBAccess
 
-from config import (
-    SUPPORTED_MODELS,
-    ASSETS_PATH,
-    CHATS_PATH,
-    LOGO_CONFIG,
-    DB_PATH,
-)
+from config import SUPPORTED_MODELS, ASSETS_PATH, CHATS_PATH, DB_PATH, SYSTEM_PROMPT
 
 from utils import save_chats_to_file, load_data, encode_image
 
@@ -22,9 +16,6 @@ colored_header(
     description="Welcome to the lake ask your question so the Panzer may answer it.",
     color_name="blue-green-70",
 )
-
-
-
 
 
 chat_container = st.container()
@@ -65,7 +56,7 @@ def initialize_session_variables() -> None:
             "content": [
                 {
                     "role": "system",
-                    "content": "You are an all-knowing, highly compliant AI assistant.",
+                    "content": SYSTEM_PROMPT,
                 }
             ],
         }
@@ -127,7 +118,7 @@ def render_chats():
                 with st.chat_message(item["role"], avatar=f"{ASSETS_PATH}/tank.jpeg"):
                     st.markdown(item["content"])
             else:
-                with st.chat_message(item["role"]):
+                with st.chat_message(item["role"], avatar=f"{ASSETS_PATH}/soldier.jpg"):
                     st.markdown(item["content"])
 
 
@@ -158,7 +149,7 @@ def populate_chats(user_chats):
                     args=(i,),
                     key=i,
                     use_container_width=True,
-                    icon=":material/arrow_right_alt:"
+                    icon=":material/arrow_right_alt:",
                 )
                 col_delete.button(
                     "",
@@ -261,6 +252,21 @@ def evaluate_image(templated_message: str):
     return message_data
 
 
+def validate_model_response(model_response: ModelResponse):
+    if not model_response.usage or not model_response.message:
+        raise ValueError(
+            "Invalid model response: missing 'usage' or 'message'. Check what the specific model class is returning"
+        )
+
+
+def handle_model_response(model_response: ModelResponse):
+    if model_response.usage["total_tokens"] == 0:
+        st.error(model_response.message["content"])
+    else:
+        st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
+        update_chat_history(model_response.message)
+
+
 def process_query(query_string: str) -> str:
     """Handles user input"""
 
@@ -280,14 +286,13 @@ def process_query(query_string: str) -> str:
             render_chats()
 
             client = get_model_client(model_provider, model_name)
-            model_response: ModelResponse = client.chat(working_chat_hist)
-            st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
-
-            update_chat_history(model_response.message)
+            model_response = client.chat(working_chat_hist)
+            validate_model_response(model_response)
+            handle_model_response(model_response)
 
             quicksave_chat()
             save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
-            print(model_response)
+
             if voice_enabled:
                 status.update(label="Weaving resonance...", state="running", expanded=False)
                 return query_text_to_speech_api(text=model_response.message["content"])

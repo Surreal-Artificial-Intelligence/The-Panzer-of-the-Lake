@@ -9,26 +9,10 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from config import (
-    SUPPORTED_MODELS,
-    ASSETS_PATH,
-    CHATS_PATH,
-    TEMPLATES_PATH,
-    LOGO_CONFIG,
-)
-
-
-st.set_page_config(
-    page_title="Summarizer",
-    page_icon="",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={"about": "Built by Surreal AI"},
-)
 
 colored_header(
     label="Panzer of the lake",
-    description="Ms Minutes summarizes web pages so that you can absorb information and move on to what matters.",
+    description="Panzer summarizes web pages so that you can absorb information and move on to what matters.",
     color_name="orange-70",
 )
 
@@ -91,7 +75,7 @@ def process_query(url_str: str) -> None:
             response = requests.get(url_str)
             soup = BeautifulSoup(response.text, "html.parser")
             page_content = remove_newlines(soup.get_text())
-            template = """Summarize the <text> according to its headings, i.e., perform a summary per heading of the text, format your summary in markdown where it makes sense. Make the summary verbose but still captures only facts: <text> {text} </text> Summary: """
+            template = """"""
             # st.session_state["chat_history"] = [{'role': 'system', 'content': 'You are an AI assistant'}]
             # st.session_state["chat_history"].append({'role': 'user', 'content': template.format(text=page_content)})
             # st.markdown(continue_conversation(st.session_state["chat_history"], on_retry=log_retries, temperature=hyperparameters['temp'], max_tokens=hyperparameters['max_t'], top_p=hyperparameters['top_p'], frequency_penalty=hyperparameters['f_pen'], presence_penalty=hyperparameters['p_pen'] ))

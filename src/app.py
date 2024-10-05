@@ -1,11 +1,8 @@
 import streamlit as st
 
 from config import (
-    SUPPORTED_MODELS,
     ASSETS_PATH,
-    CHATS_PATH,
     LOGO_CONFIG,
-    DB_PATH,
 )
 
 st.set_page_config(
