@@ -15,12 +15,7 @@ SUPPORTED_MODELS = {
         "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
     ],
-    "Ollama": [
-        "mistral",
-        "samantha-mistral",
-        "aya",
-        "bakllava"
-    ],
+    "Ollama": ["mistral", "samantha-mistral", "aya", "bakllava"],
 }
 
 
@@ -83,4 +78,6 @@ DB_PATH = "./db"
 
 LOGO_CONFIG = {"image": f"{ASSETS_PATH}/surreal-logo-and-text.png", "icon_image": f"{ASSETS_PATH}/surreal-logo.jpg"}
 
-SYSTEM_PROMPT = "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used.",
+SYSTEM_PROMPT = (
+    "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used.",
+)

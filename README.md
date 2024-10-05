@@ -44,26 +44,34 @@ streamlit run home.py
 
 ## Roadmap
 
-1. Prompt Templates
-   1. CRUD (TinyDB)
+1. - [x] Prompt Templates
+   1. - [x] CRUD (TinyDB)
 2. Document QA
    - UI components
    - FAISS
    - Local and Remote Embedding model
    - Local Folder QA
 3. Cleanup, Linting, Standards
-   1. Model List standardization. Make dynamic with model stats
-   2. Make everything into a package.
-4. Build and configure linting pipeline
-5. Prompt optimizations and automatic self reflection
-6. Token counting utilities (client side)
-7. [x] - Image generation frontend
-8. [x] - Abstract configuration
-9. [x] - Add logos
-10. Local and Remote TTS model optimizations
-11. TinyDB
-12. Upgrade to Python 3.12
-13. Hook up custom vector database for advanced RAG.
+   1. - [ ] Model List standardization. Make dynamic with model stats
+   2. - [ ] Make everything into a package.
+4. - [ ] Build and configure linting pipeline
+5. - [ ] Prompt optimizations and automatic self reflection
+6. - [x] Configurable system prompt (server side)
+7. - [ ] Token counting utilities (client side)
+8. - [x] Image generation frontend
+9. - [x] Abstract configuration
+10. - [x] Add logos
+11. - [ ] Local and Remote TTS model optimizations
+12. - [x] Upgrade to Python 3.12
+13. - [x] Integrate image generation interface
+    1. - [ ] Add history for image generation prompts
+14. - [x] Integrate audio transcription using local transformers
+15. - [ ] Add compatibility with transformer models
+16. - [ ] custom vector database for advanced RAG.
+17. - [ ] Implement Search API for internet access.
+18. - [ ] Support for multi-modal chats.
+19. - [ ] Add automatic memories
+20. - [ ] Add function calling
 
 ## Authors
 

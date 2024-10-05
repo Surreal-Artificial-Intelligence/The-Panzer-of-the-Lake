@@ -4,18 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-streamlit-extras = "*"
-ipykernel = "*"
-tiktoken = "*"
-tqdm = "*"
-streamlit = "*"
+streamlit = "==1.39.0"
 openai = "*"
-llama-index = "*"
-langchain = "*"
-pypdf = "*"
 tinydb = "*"
+transformers = "*"
+streamlit-extras = "*"
+accelerate = "*"
+pypdf = "*"
+torch = "*"
+tiktoken = "*"
+ipykernel = "*"
+faiss-cpu = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"
