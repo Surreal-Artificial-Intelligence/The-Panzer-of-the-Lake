@@ -10,9 +10,5 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def test_connection(self) -> str:
-        pass
-
-    @abstractmethod
     def chat(self, messages) -> ModelResponse:
         pass

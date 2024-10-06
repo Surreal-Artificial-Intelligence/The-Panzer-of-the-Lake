@@ -53,7 +53,7 @@ def generate_image(image_prompt: str):
     else:
         raise TypeError(f"Expected a {TogetherAIModel} instance, but received a {type(client)}")
 
-    return str(response.data[0].url)
+    return response.image_url
 
 
 prompt = st.text_input("An image prompt")

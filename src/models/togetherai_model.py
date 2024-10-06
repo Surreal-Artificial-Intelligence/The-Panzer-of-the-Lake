@@ -1,20 +1,17 @@
 from openai import OpenAI
+import requests
 from data_class.model_response import ModelResponse
 from data_class.image_response import ImageResponse
+from data_class.embedding_response import EmbeddingResponse
 from interfaces.base_model import BaseModel
 
 
 class TogetherAIModel(BaseModel):
     def __init__(self, api_key: str, model_name: str, base_url: str):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.api_key = api_key
+        self.base_url = base_url
         self.model_name = model_name
-
-    def test_connection(self):
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "system", "content": "You are an AI assistant"}, {"role": "user", "content": "Hello"}],
-        )
-        return response
 
     def transcribe(self, audio) -> str:
         """Transcribe audio using Open AI whisper v3"""
@@ -56,11 +53,32 @@ class TogetherAIModel(BaseModel):
                 },
             )
 
-    def image(self, prompt: str):
+    def image(self, prompt: str) -> ImageResponse:
         """Generate an image using the OpenAI library with Together AI"""
-        response = self.client.images.generate(
-            prompt=prompt,
-            model=self.model_name,
-            n=1,
-        )
+        response = None
+        try:
+            response = self.client.images.generate(
+                prompt=prompt,
+                model=self.model_name,
+                n=1,
+            )
+            return ImageResponse(image_url=response.data[0].url)
+        except Exception as error:
+            return ImageResponse(image_url=str(error))
+
+    def embeddding(self, text: str) -> EmbeddingResponse:
+        """Generate embedding using the OpenAI library with Together AI"""
+
+        payload = {"model": self.model_name, "input": text}
+
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        response = requests.post(self.base_url, json=payload, headers=headers)
+
+        print(response.text)
+        # return EmbeddingResponse(embeddings=response["data"][0]["embedding"], )
         return response
