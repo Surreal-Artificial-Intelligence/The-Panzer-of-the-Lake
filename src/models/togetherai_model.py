@@ -1,9 +1,12 @@
 from openai import OpenAI
+import json
+import numpy as np
 import requests
 from data_class.model_response import ModelResponse
 from data_class.image_response import ImageResponse
 from data_class.embedding_response import EmbeddingResponse
 from interfaces.base_model import BaseModel
+from typing import List
 
 
 class TogetherAIModel(BaseModel):
@@ -43,7 +46,6 @@ class TogetherAIModel(BaseModel):
                 },
             )
         except Exception as error:
-            print(error)
             return ModelResponse(
                 {"role": "assistant", "content": str(error)},
                 {
@@ -66,10 +68,10 @@ class TogetherAIModel(BaseModel):
         except Exception as error:
             return ImageResponse(image_url=str(error))
 
-    def embeddding(self, text: str) -> EmbeddingResponse:
+    def embedding(self, texts: List[str]) -> EmbeddingResponse:
         """Generate embedding using the OpenAI library with Together AI"""
 
-        payload = {"model": self.model_name, "input": text}
+        payload = {"model": self.model_name, "input": texts}
 
         headers = {
             "accept": "application/json",
@@ -79,6 +81,7 @@ class TogetherAIModel(BaseModel):
 
         response = requests.post(self.base_url, json=payload, headers=headers)
 
-        print(response.text)
-        # return EmbeddingResponse(embeddings=response["data"][0]["embedding"], )
-        return response
+        embeddings = [item["embedding"] for item in json.loads(response.text)["data"]]
+        return EmbeddingResponse(
+            embeddings=np.array(embeddings),
+        )

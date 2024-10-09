@@ -1,18 +1,16 @@
-import time
 import requests
 import logging
 from interfaces.base_model import BaseModel
 from data_class.model_response import ModelResponse
-from utils import calculate_sleep_time
+from data_class.image_response import ImageResponse
+from data_class.embedding_response import EmbeddingResponse
 
 
 class CohereAzureModel(BaseModel):
     """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
     the Cohere Azure API and receiving responses from the API."""
 
-    def __init__(
-        self, api_key: str, api_version: str, azure_endpoint: str, model_name: str
-    ):
+    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
         self.api_key = api_key
         self.azure_endpoint = azure_endpoint
         self.api_version = api_version
@@ -54,12 +52,6 @@ class CohereAzureModel(BaseModel):
     def chat(
         self,
         messages,
-        max_retries=10,
-        initial_delay=1,
-        backoff_factor=2,
-        jitter=0.1,
-        max_delay=64,
-        on_retry=None,
         **kwargs,
     ) -> ModelResponse:
         """Sends a request to the model with exponential backoff retry policy.
@@ -67,18 +59,6 @@ class CohereAzureModel(BaseModel):
         ----------
         message : str
             The message to send to the model.
-        max_retries : int, optional
-            The maximum number of retries before giving up. Default is 10.
-        initial_delay : float, optional
-            The initial delay in seconds between retries. Default is 1.
-        backoff_factor : float, optional
-            The factor by which the delay increases exponentially. Default is 2.
-        jitter : float, optional
-            The random factor to apply to the sleep time calculation. Default is 0.1.
-        max_delay : float, optional
-            The maximum delay in seconds between retries. Default is 64.
-        on_retry : callable, optional
-            An optional callback function that is executed on each retry. Default is None.
         kwargs : dict
             Additional keyword arguments to be passed to the ChatCompletion.create() function.
 
@@ -88,37 +68,27 @@ class CohereAzureModel(BaseModel):
             The response from the model.
         """
 
-        retries = 0
-        while retries < max_retries:
-            try:
-                url = self.azure_endpoint
-                response = requests.post(
-                    url,
-                    json={"messages": messages},
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {self.api_key}",
-                    },
-                )
-                response.raise_for_status()
-                response = response.json()
-                return ModelResponse(response["choices"][0]["message"], response["usage"])
-            except Exception as error:
-                if retries == max_retries - 1:
-                    raise error
-                else:
-                    sleep_time = calculate_sleep_time(
-                        retries, initial_delay, backoff_factor, jitter, max_delay
-                    )
-                    if on_retry is not None:
-                        on_retry(retries, sleep_time, error)
-                    time.sleep(sleep_time)
-                    retries += 1
+        try:
+            url = self.azure_endpoint
+            response = requests.post(
+                url,
+                json={"messages": messages},
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}",
+                },
+            )
+            response.raise_for_status()
+            response = response.json()
+            return ModelResponse(response["choices"][0]["message"], response["usage"])
+        except Exception as error:
+            return ModelResponse(
+                {"role": "assistant", "content": str(error)},
+                {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
+            )
 
-        return ModelResponse(
-            {"role": "assistant", "content": "Maximum number of retries exceeded."},
-            {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
-        )
+    def image(self) -> ImageResponse:
+        raise NotImplementedError()
 
-    # def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
-    #     return client.embeddings.create(input = [text], model=model).data[0].embedding
+    def embedding(self) -> EmbeddingResponse:
+        raise NotImplementedError()

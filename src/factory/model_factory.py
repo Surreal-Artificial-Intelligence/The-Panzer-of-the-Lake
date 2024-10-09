@@ -1,6 +1,5 @@
 from models.azure_cohere_model import CohereAzureModel
 from models.azure_openai_model import AzureOpenAIModel
-from models.generic_https_model import GenericHttpsModel
 from models.togetherai_model import TogetherAIModel
 from models.ollama_model import OllamaModel
 from models.open_ai_model import OpenAIModel
@@ -16,7 +15,7 @@ class ModelFactory:
         if model_provider == "Azure":
             return AzureOpenAIModel(
                 api_key=st.secrets["AZURE_OPENAI_API_KEY"],
-                api_version=st.secrets["AZURE_API_VERSION"],
+                api_version=str(st.secrets["AZURE_API_VERSION"]).format(model_name),
                 azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
                 model_name=model_name,
                 default_headers={"Ocp-Apim-Subscription-Key": st.secrets["AZURE_OPENAI_API_KEY"]},
@@ -45,6 +44,6 @@ class ModelFactory:
                 model_name=model_name,
             )
         elif model_provider == "Transformers":
-            return TransformersModel(model_path)
+            return TransformersModel(model_path if model_path else model_name)
         else:
             raise ValueError("Invalid Model Provider")

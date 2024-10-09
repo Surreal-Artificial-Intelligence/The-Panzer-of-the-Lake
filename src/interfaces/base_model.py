@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from data_class.model_response import ModelResponse
+from data_class.image_response import ImageResponse
+from data_class.embedding_response import EmbeddingResponse
 
 
 class BaseModel(ABC):
@@ -11,4 +13,12 @@ class BaseModel(ABC):
 
     @abstractmethod
     def chat(self, messages) -> ModelResponse:
+        pass
+
+    @abstractmethod
+    def image(self, messages) -> ImageResponse:
+        pass
+
+    @abstractmethod
+    def embedding(self, messages) -> EmbeddingResponse:
         pass

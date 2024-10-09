@@ -1,5 +1,6 @@
-import pathlib
 from data_class.model_response import ModelResponse
+from data_class.image_response import ImageResponse
+from data_class.embedding_response import EmbeddingResponse
 from interfaces.base_model import BaseModel
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
@@ -9,11 +10,8 @@ class TransformersModel(BaseModel):
     def __init__(self, model_name_or_path: str) -> None:
         self.model_name_or_path = model_name_or_path
 
-    def test_connection(self) -> str:
-        pass
-
     def chat(self) -> ModelResponse:
-        pass
+        raise NotImplementedError()
 
     def load_model(self, model_id) -> None:
         # TODO add support for using cache, downloaed model, or specify local model path
@@ -51,4 +49,10 @@ class TransformersModel(BaseModel):
 
         result = self.pipe(audio)
 
-        return result
+        return result  # type: ignore
+
+    def image(self) -> ImageResponse:
+        raise NotImplementedError()
+
+    def embedding(self) -> EmbeddingResponse:
+        raise NotImplementedError()

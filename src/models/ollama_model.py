@@ -3,6 +3,8 @@ import json
 import requests
 from utils import calculate_sleep_time, log_retries
 from data_class.model_response import ModelResponse
+from data_class.image_response import ImageResponse
+from data_class.embedding_response import EmbeddingResponse
 from interfaces.base_model import BaseModel
 
 
@@ -85,3 +87,10 @@ class OllamaModel(BaseModel):
             {"role": "assistant", "content": "Maximum number of retries exceeded."},
             {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
         )
+
+    def image(self) -> ImageResponse:
+        raise NotImplementedError()
+
+    def embedding(self) -> EmbeddingResponse:
+        raise NotImplementedError()
+

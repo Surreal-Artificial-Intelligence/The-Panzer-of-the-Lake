@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Optional
+import numpy as np
+from typing import Optional
 
 
 @dataclass
 class EmbeddingResponse:
     """Represents a response from an embedding model."""
 
-    embeddings: List[List[float]]
+    embeddings: np.ndarray
 
     metadata: Optional[dict] = None
