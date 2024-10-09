@@ -187,14 +187,10 @@ with st.sidebar:
     model_name = st.selectbox("Model:", SUPPORTED_MODELS[model_provider]) or "Ollama"
     template_name = st.selectbox("Prompt Template:", [item.name for item in st.session_state["templates"]])
     st.divider()
-    image = st.button("Attach image", on_click=file_uploader)
-    st.write(st.session_state["image"]["file_name"])
-    st.divider()
     voice_enabled = st.checkbox("Voice")
 
     hyperparameters_enabled = st.checkbox("Hyperparameters")
     if hyperparameters_enabled:
-        st.markdown("# Hyperparameters")
         temp = st.slider("Temperature", 0.0, 1.0, 0.5, 0.1)
         st.session_state["hyperparameters"] = {
             "temperature": temp,
@@ -300,6 +296,11 @@ def process_query(query_string: str) -> str:
                 return model_response.message["content"]
 
 
+# file = st.file_uploader("upload", label_visibility="hidden", type=["png", "jpg"])
+# if file:
+#     bytes_data = file.getvalue()
+#     encoded_image = encode_image(bytes_data)
+#     st.session_state["image"] = {"file_name": file.name, "content": encoded_image}
 if query := st.chat_input("O Panzer of the Lake, what is your wisdom?"):
     response = process_query(query)
     if voice_enabled:

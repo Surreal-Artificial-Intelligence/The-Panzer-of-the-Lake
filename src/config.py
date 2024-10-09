@@ -2,6 +2,7 @@ SUPPORTED_MODELS = {
     "Azure": [
         "gpt-4o",
         "gpt-4o-mini",
+        "o1-preview"
     ],
     "OpenAI": [
         "gpt-4o",
@@ -11,6 +12,7 @@ SUPPORTED_MODELS = {
         "command-r-plus",
     ],
     "TogetherAI": [
+        "meta-llama/Llama-Vision-Free",
         "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
         "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
@@ -78,6 +80,4 @@ DB_PATH = "./db"
 
 LOGO_CONFIG = {"image": f"{ASSETS_PATH}/surreal-logo-and-text.png", "icon_image": f"{ASSETS_PATH}/surreal-logo.jpg"}
 
-SYSTEM_PROMPT = (
-    "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used.",
-)
+SYSTEM_PROMPT = "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used."
