@@ -15,9 +15,10 @@ class ModelFactory:
         if model_provider == "Azure":
             return AzureOpenAIModel(
                 api_key=st.secrets["AZURE_OPENAI_API_KEY"],
-                api_version=str(st.secrets["AZURE_API_VERSION"]).format(model_name),
-                azure_endpoint=st.secrets["AZURE_OPENAI_BASE"],
+                api_version=st.secrets["AZURE_API_VERSION"],
+                azure_endpoint=str(st.secrets["AZURE_OPENAI_BASE"].format(model_name)),
                 model_name=model_name,
+                image_endpoint=str(st.secrets.get("AZURE_IMAGE_ENDPOINT")),
                 default_headers={"Ocp-Apim-Subscription-Key": st.secrets["AZURE_OPENAI_API_KEY"]},
             )
         elif model_provider == "Cohere":

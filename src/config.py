@@ -27,6 +27,9 @@ SUPPORTED_IMAGE_MODELS = {
         "black-forest-labs/FLUX.1-schnell-Free",
         "black-forest-labs/FLUX.1.1-pro",
     ],
+    "Azure": [
+        "Dalle3",
+    ]
 }
 
 models = {

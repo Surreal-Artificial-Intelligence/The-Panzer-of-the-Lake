@@ -13,14 +13,34 @@ class AzureOpenAIModel(BaseModel):
     before retrying. The class is initialized with an Azure OpenAI API key, version, endpoint, and model name.
     """
 
-    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str, **kwargs):
+    def __init__(
+        self, api_key: str, api_version: str, model_name: str, azure_endpoint: str, image_endpoint: str, **kwargs
+    ):
+        self.api_key = api_key
+        self.api_version = api_version
+        self.azure_endpoint = azure_endpoint
         self.client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint, **kwargs)
         self.model_name = model_name
+
+        self.default_headers = kwargs.get("default_headers", {})
+
+        self.image_endpoint = image_endpoint
+        self.image_client = None
+
+    def _initialize_image_client(self):
+        if self.image_client is None:
+            if not self.image_endpoint:
+                raise ValueError("Azure OpenAI image endpoint is required")
+            self.image_client = AzureOpenAI(
+                api_key=self.api_key,
+                api_version=self.api_version,
+                azure_endpoint=self.image_endpoint,
+                default_headers=self.default_headers,
+            )
 
     def chat(
         self,
         messages,
-        model=st.secrets["AZURE_OPENAI_DEPLOYMENT"],
         **kwargs,
     ) -> ModelResponse:
         try:
@@ -45,5 +65,16 @@ class AzureOpenAIModel(BaseModel):
     def embedding(self, text, model="text-embedding-ada-002") -> EmbeddingResponse:
         return EmbeddingResponse(np.array(self.client.embeddings.create(input=[text], model=model).data[0].embedding))
 
-    def image(self) -> ImageResponse:
-        raise NotImplementedError()
+    def image(self, prompt: str) -> ImageResponse:
+        self._initialize_image_client()
+        try:
+            if self.image_client:
+                response = self.image_client.images.generate(
+                    prompt=prompt, model=self.model_name, quality="hd", response_format="url", style="vivid"
+                )
+            else:
+                raise ValueError("Image client initialization failed")
+
+            return ImageResponse(response.data[0].url)
+        except Exception as error:
+            raise error

@@ -16,7 +16,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def image(self, messages) -> ImageResponse:
+    def image(self, prompt) -> ImageResponse:
         pass
 
     @abstractmethod

@@ -46,13 +46,7 @@ def get_model_client(model_provider: str, model_label: str) -> BaseModel:
 def generate_image(image_prompt: str):
     """Generate image from prompt using model. Returns a URL"""
     client = get_model_client(model_provider, model_name)
-
-    # satisfy type checker
-    if isinstance(client, TogetherAIModel):
-        response = client.image(prompt=image_prompt)
-    else:
-        raise TypeError(f"Expected a {TogetherAIModel} instance, but received a {type(client)}")
-
+    response = client.image(prompt=image_prompt)
     return response.image_url
 
 
