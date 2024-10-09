@@ -5,6 +5,7 @@ from interfaces.base_model import BaseModel
 from data_class.model_response import ModelResponse
 from data_class.image_response import ImageResponse
 from data_class.embedding_response import EmbeddingResponse
+from typing import Optional
 
 
 class AzureOpenAIModel(BaseModel):
@@ -14,7 +15,13 @@ class AzureOpenAIModel(BaseModel):
     """
 
     def __init__(
-        self, api_key: str, api_version: str, model_name: str, azure_endpoint: str, image_endpoint: str, **kwargs
+        self,
+        api_key: str,
+        api_version: str,
+        model_name: str,
+        azure_endpoint: str,
+        image_endpoint: Optional[str] = None,
+        **kwargs,
     ):
         self.api_key = api_key
         self.api_version = api_version
