@@ -2,12 +2,20 @@
 
 [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
 
-POTL is a chat interface that can be used with any _Large Language Model (LLM)_.
+POTL is a chat interface that can be used with most _Large Language Models (LLMs)_ and their providers.
 
 ## Features
 
-- Compatible with any LLM model.
+- Compatible with most LLM model providers.
 - Easily extensible for a case by case basis.
+
+So far Panzer supports:
+
+- Azure OpenAI
+- OpenAI
+- TogetherAI
+- Ollama (Local)
+- Transformers (Local)
 
 ## Documentation
 
@@ -15,7 +23,7 @@ The full documentation can be found in the `docs` directory.
 
 ## Dependencies
 
-Python 3.10 or higher is required.
+Python 3.12 or higher is required.
 Run the following command to install Pipenv, a virtual environment manager:
 
 ```bash
@@ -24,13 +32,21 @@ pip install pipenv
 
 ## Installation
 
-Clone the repository, go into the repository directory, and then initialise the
-Python virtual environment.
+Clone the repository, go into the repository directory, and then initialize the Python virtual environment.
 
 ```bash
 git clone https://github.com/Surreal-Artificial-Intelligence/The-Panzer-of-the-Lake.git
+```
+
+```bash
 cd The-Panzer-of-the-Lake
+```
+
+```bash
 pipenv shell
+```
+
+```bash
 pipenv install
 ```
 
@@ -39,7 +55,11 @@ pipenv install
 To launch POTL, simply run:
 
 ```bash
-streamlit run home.py
+cd src
+```
+
+```bash
+streamlit run app.py
 ```
 
 ## Roadmap
@@ -65,13 +85,13 @@ streamlit run home.py
 12. - [x] Upgrade to Python 3.12
 13. - [x] Integrate image generation interface
     1. - [ ] Add history for image generation prompts
-14. - [x] Integrate audio transcription using local transformers
-15. - [ ] Add compatibility with transformer models
-16. - [ ] custom vector database for advanced RAG.
-17. - [ ] Implement Search API for internet access.
-18. - [ ] Support for multi-modal chats.
-19. - [ ] Add automatic memories
-20. - [ ] Add function calling
+14. - [ ] Add full compatibility with transformer models
+    1. - [x] Integrate audio transcription using local transformers
+15. - [ ] Custom vector database for advanced RAG.
+16. - [ ] Implement Search API for internet access.
+17. - [ ] Support for multi-modal chats.
+18. - [ ] Add automatic memories
+19. - [ ] Add function calling
 
 ## Authors
 
