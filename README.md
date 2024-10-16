@@ -67,10 +67,10 @@ streamlit run app.py
 1. - [x] Prompt Templates
    1. - [x] CRUD (TinyDB)
 2. Document QA
-   - UI components
-   - FAISS
-   - Local and Remote Embedding model
-   - Local Folder QA
+   - [ ] UI components
+   - [ ] FAISS
+   - [ ] Local and Remote Embedding model
+   - [ ] Local Folder QA
 3. Cleanup, Linting, Standards
    1. - [ ] Model List standardization. Make dynamic with model stats
    2. - [ ] Make everything into a package.
@@ -81,17 +81,22 @@ streamlit run app.py
 8. - [x] Image generation frontend
 9. - [x] Abstract configuration
 10. - [x] Add logos
-11. - [ ] Local and Remote TTS model optimizations
+11. - [ ] TTS model
+    1. Local TTS with Coqui
+    2. Remote TTS with Azure
 12. - [x] Upgrade to Python 3.12
 13. - [x] Integrate image generation interface
     1. - [ ] Add history for image generation prompts
+    2. - [x] Add support for Azure DALLE 3
 14. - [ ] Add full compatibility with transformer models
     1. - [x] Integrate audio transcription using local transformers
 15. - [ ] Custom vector database for advanced RAG.
 16. - [ ] Implement Search API for internet access.
 17. - [ ] Support for multi-modal chats.
+    1. - [x] Support for Llama3.2-Vision models with images
 18. - [ ] Add automatic memories
 19. - [ ] Add function calling
+20. - [ ] Add code interpreter
 
 ## Authors
 
