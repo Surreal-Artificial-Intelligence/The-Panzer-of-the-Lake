@@ -2,11 +2,11 @@ import streamlit as st
 from streamlit_extras.colored_header import colored_header
 import json
 
-from panzer.core.factory.model_factory import ModelFactory
-from panzer.core.models.responses.model_response import ModelResponse
-from panzer.core.models.base_model import BaseModel
-from panzer.data.tinydb_access import TinyDBAccess
-from panzer.core.models.transformers_model import TransformersModel
+from core.factory.model_factory import ModelFactory
+from core.models.responses.model_response import ModelResponse
+from core.models.base_model import BaseModel
+from data.tinydb_access import TinyDBAccess
+from core.models.transformers_model import TransformersModel
 
 
 colored_header(

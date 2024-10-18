@@ -1,9 +1,9 @@
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
-from panzer.shared.data_class.prompt_template import PromptTemplate
+from shared.data_class.prompt_template import PromptTemplate
 
-from config import DB_PATH
-from panzer.data.tinydb_access import TinyDBAccess
+from web.config import DB_PATH
+from data.tinydb_access import TinyDBAccess
 
 
 colored_header(

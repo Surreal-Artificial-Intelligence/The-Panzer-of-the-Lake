@@ -1,13 +1,13 @@
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 
-from panzer.core.factory.model_factory import ModelFactory
-from panzer.core.models.responses.image_response import ImageResponse
-from panzer.core.models.base_model import BaseModel
-from panzer.data.tinydb_access import TinyDBAccess
-from panzer.core.models.togetherai_model import TogetherAIModel
+from core.factory.model_factory import ModelFactory
+from core.models.responses.image_response import ImageResponse
+from core.models.base_model import BaseModel
+from data.tinydb_access import TinyDBAccess
+from core.models.togetherai_model import TogetherAIModel
 
-from config import (
+from web.config import (
     SUPPORTED_IMAGE_MODELS,
 )
 
