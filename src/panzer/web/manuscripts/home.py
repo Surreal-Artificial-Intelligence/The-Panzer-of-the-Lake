@@ -153,7 +153,7 @@ def populate_chats(user_chats):
 
     for i, item in enumerate(user_chats["chats"]):
         chat_tile_container = st.container()
-        col_load, col_delete = st.columns((3, 1))
+        col_delete, colpace, col_load = st.columns((1, 2, 1))
         with chat_tile_container:
             if item:
                 colored_header(
@@ -166,6 +166,7 @@ def populate_chats(user_chats):
                     on_click=load_conversation,
                     args=(i,),
                     key=i,
+                    help="Load thread",
                     use_container_width=True,
                     icon=":material/arrow_right_alt:",
                 )
@@ -174,6 +175,7 @@ def populate_chats(user_chats):
                     on_click=delete_conversation,
                     args=(i,),
                     key=i + 10000,
+                    help="Delete thread",
                     use_container_width=True,
                     icon=":material/delete:",
                 )
@@ -205,9 +207,8 @@ with st.sidebar:
     model_name = st.selectbox("Model:", SUPPORTED_MODELS[model_provider]) or "Ollama"
     template_name = st.selectbox("Prompt Template:", [item.name for item in st.session_state["templates"]])
     st.divider()
-    voice_enabled = st.checkbox("Voice")
-
-    hyperparameters_enabled = st.checkbox("Hyperparameters")
+    voice_enabled = st.toggle("Voice Mode")
+    hyperparameters_enabled = st.toggle("Hyperparameters")
     if hyperparameters_enabled:
         temp = st.slider("Temperature", 0.0, 1.0, 0.5, 0.1)
         st.session_state["hyperparameters"] = {
