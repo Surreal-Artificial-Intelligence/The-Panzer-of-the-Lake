@@ -12,13 +12,20 @@ st.set_page_config(
     initial_sidebar_state="auto",
     menu_items={"about": "Built by Surreal AI"},
 )
-# st.logo(**LOGO_CONFIG)
+st.logo(**LOGO_CONFIG)
 
-prompt_templates_page = st.Page(
-    "web/manuscripts/prompt_template_editor.py",
-    title="Prompt Template Editor",
-    icon=":material/edit_note:",
-)
+customize_section = [
+    st.Page(
+        "web/manuscripts/prompt_template_editor.py",
+        title="Prompt Template Editor",
+        icon=":material/edit_note:",
+    ),
+    st.Page(
+        "web/manuscripts/models_info.py",
+        title="Models",
+        icon=":material/book_2:",
+    ),
+]
 
 generate_section = [
     st.Page(
@@ -39,5 +46,5 @@ generate_section = [
 ]
 
 
-pg = st.navigation({"Generate": generate_section, "Customize": [prompt_templates_page]})
+pg = st.navigation({"Generate": generate_section, "Customize": customize_section})
 pg.run()

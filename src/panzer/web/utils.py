@@ -4,7 +4,7 @@ import random
 import base64
 from shared.data_class.aimodel import AIModel
 from core.models.provider import Provider
-
+from typing import List, Optional, Dict
 from web.config import CHATS_PATH
 
 ENCODING = "utf-8"
@@ -175,13 +175,9 @@ def load_model_configs() -> list[AIModel]:
         model_data = json.load(file)
 
     ll_models = []
-    for organization, models in model_data.items():
-        for model in models:
-            ll_models.append(
-                AIModel(
-                    Provider[organization.upper()],
-                    model["model_name"],
-                    model["context_length"],
-                )
-            )
+    # for organization, models in model_data.items():
+    #     for model in models:
+    #         ll_models.append(
+    #         )
+    # TODO: Figure out how to load configs for other models.
     return ll_models

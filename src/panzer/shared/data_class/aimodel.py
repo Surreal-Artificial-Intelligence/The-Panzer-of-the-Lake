@@ -1,9 +1,17 @@
 from dataclasses import dataclass
-from core.models.provider import Provider
+from typing import List, Optional
+
 
 
 @dataclass
 class AIModel:
-    organization: Provider
-    model_name: str
-    context_length: int
+    id: str
+    created: int
+    type: str
+    display_name: str
+    organization: str
+    license: Optional[str]
+    context_length: Optional[int]
+    price_input: float
+    price_output: float
+
