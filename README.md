@@ -72,31 +72,35 @@ streamlit run app.py
    - [ ] Local and Remote Embedding model
    - [ ] Local Folder QA
 3. Cleanup, Linting, Standards
-   1. - [ ] Model List standardization. Make dynamic with model stats
-   2. - [ ] Make everything into a package.
-4. - [ ] Build and configure linting pipeline
-5. - [ ] Prompt optimizations and automatic self reflection
-6. - [x] Configurable system prompt (server side)
-7. - [ ] Token counting utilities (client side)
-8. - [x] Image generation frontend
-9. - [x] Abstract configuration
-10. - [x] Add logos
-11. - [ ] TTS model
+4. [ ] Dynamic models list.
+   1. [ ] TogetherAI
+   2. [ ] Azure
+5. [ ] Model Stats and Specs List
+   1. - [ ] Make everything into a package.
+6. - [ ] Build and configure linting pipeline
+7. - [ ] Prompt optimizations and automatic self reflection
+8. - [x] Configurable system prompt (server side)
+9. - [ ] Token counting utilities (client side)
+10. - [x] Image generation frontend
+11. - [x] Abstract configuration
+12. - [x] Add logos
+13. - [ ] TTS model
     1. Local TTS with Coqui
     2. Remote TTS with Azure
-12. - [x] Upgrade to Python 3.12
-13. - [x] Integrate image generation interface
+14. - [x] Upgrade to Python 3.12
+15. - [x] Integrate image generation interface
     1. - [ ] Add history for image generation prompts
     2. - [x] Add support for Azure DALLE 3
-14. - [ ] Add full compatibility with transformer models
+16. - [ ] Add full compatibility with transformer models
     1. - [x] Integrate audio transcription using local transformers
-15. - [ ] Custom vector database for advanced RAG.
-16. - [ ] Implement Search API for internet access.
-17. - [ ] Support for multi-modal chats.
+17. - [ ] Custom vector database for advanced RAG.
+18. - [ ] Implement Search API for internet access.
+19. - [ ] Support for multi-modal chats.
     1. - [x] Support for Llama3.2-Vision models with images
-18. - [ ] Add automatic memories
-19. - [ ] Add function calling
-20. - [ ] Add code interpreter
+20. - [ ] Add automatic memories
+21. - [ ] Add function calling
+22. - [ ] Add code interpreter
+23. - [ ] Implement repository analysis capabilities
 
 ## Authors
 
