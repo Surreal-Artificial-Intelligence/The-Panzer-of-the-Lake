@@ -1,12 +1,12 @@
 import requests
 import logging
-from core.models.base_model import BaseModel
+from core.models.base_model_client import BaseModelClient
 from core.models.responses.model_response import ModelResponse
 from core.models.responses.image_response import ImageResponse
-from core.models.embedding_response import EmbeddingResponse
+from core.models.responses.embedding_response import EmbeddingResponse
 
 
-class CohereAzureModel(BaseModel):
+class CohereAzureModel(BaseModelClient):
     """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
     the Cohere Azure API and receiving responses from the API."""
 

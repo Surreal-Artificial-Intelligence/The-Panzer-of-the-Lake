@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from core.models.responses.model_response import ModelResponse
 from core.models.responses.image_response import ImageResponse
-from core.models.embedding_response import EmbeddingResponse
+from core.models.responses.embedding_response import EmbeddingResponse
 
 
-class BaseModel(ABC):
+class BaseModelClient(ABC):
     """Abstract class for all models"""
 
     @abstractmethod
@@ -12,13 +12,17 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def chat(self, messages) -> ModelResponse:
+    def models(self):
         pass
 
     @abstractmethod
-    def image(self, prompt) -> ImageResponse:
+    def chat(self, model_name: str, messages) -> ModelResponse:
         pass
 
     @abstractmethod
-    def embedding(self, messages) -> EmbeddingResponse:
+    def image(self, model_name: str, prompt) -> ImageResponse:
+        pass
+
+    @abstractmethod
+    def embedding(self, model_name: str, messages) -> EmbeddingResponse:
         pass

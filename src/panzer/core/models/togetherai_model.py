@@ -4,13 +4,14 @@ import numpy as np
 import requests
 from core.models.responses.model_response import ModelResponse
 from core.models.responses.image_response import ImageResponse
-from core.models.embedding_response import EmbeddingResponse
-from core.models.base_model import BaseModel
+from core.models.responses.embedding_response import EmbeddingResponse
+from shared.data_class.aimodel import AIModel
+from core.models.base_model_client import BaseModelClient
 from typing import List
 
 
-class TogetherAIModel(BaseModel):
-    def __init__(self, api_key: str, model_name: str, base_url: str):
+class TogetherAIModel(BaseModelClient):
+    def __init__(self, api_key: str, base_url: str):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.api_key = api_key
         self.base_url = base_url

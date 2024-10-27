@@ -3,7 +3,7 @@ from streamlit_extras.colored_header import colored_header
 
 from core.factory.model_factory import ModelFactory
 from core.models.responses.image_response import ImageResponse
-from core.models.base_model import BaseModel
+from panzer.core.models.base_model_client import BaseModelClient
 from data.tinydb_access import TinyDBAccess
 from core.models.togetherai_model import TogetherAIModel
 

@@ -4,7 +4,7 @@ import json
 
 from core.factory.model_factory import ModelFactory
 from core.models.responses.model_response import ModelResponse
-from core.models.base_model import BaseModel
+from panzer.core.models.base_model_client import BaseModelClient
 from data.tinydb_access import TinyDBAccess
 from core.models.transformers_model import TransformersModel
 

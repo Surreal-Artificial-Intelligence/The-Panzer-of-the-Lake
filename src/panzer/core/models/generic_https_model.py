@@ -2,12 +2,11 @@ import time
 import requests
 import logging
 
-from interfaces.base_model import BaseModel
-from panzer.core.models.responses.model_response import ModelResponse
-from utils import calculate_sleep_time
+from core.models.base_model_client import BaseModelClient
+from core.models.responses.model_response import ModelResponse
 
 
-class GenericHttpsModel(BaseModel):
+class GenericHttpsModel(BaseModelClient):
     """A universal wrapper class to chat to any LLM via HTTPS POST calls."""
 
     def __init__(self, api_key: str, api_version: str, endpoint: str, model_name: str):

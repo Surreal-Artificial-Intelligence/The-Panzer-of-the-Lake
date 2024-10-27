@@ -3,12 +3,12 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 from streamlit_extras.colored_header import colored_header
 
 
-from core.services.rag_manager import RAGManager
-from core.services.document_engine import DocumentEngine
+from core.services.rag.rag_manager import RAGManager
+from core.services.rag.document_engine import DocumentEngine
 
 from core.factory.model_factory import ModelFactory
 from core.models.responses.model_response import ModelResponse
-from core.models.base_model import BaseModel
+from core.models.base_model_client import BaseModelClient
 from data.tinydb_access import TinyDBAccess
 
 from web.config import SUPPORTED_MODELS, ASSETS_PATH, CHATS_PATH, DB_PATH, SYSTEM_PROMPT

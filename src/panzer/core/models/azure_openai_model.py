@@ -1,13 +1,13 @@
 import numpy as np
 from openai import AzureOpenAI
-from core.models.base_model import BaseModel
+from core.models.base_model_client import BaseModelClient
 from core.models.responses.model_response import ModelResponse
 from core.models.responses.image_response import ImageResponse
-from core.models.embedding_response import EmbeddingResponse
+from core.models.responses.embedding_response import EmbeddingResponse
 from typing import Optional
 
 
-class AzureOpenAIModel(BaseModel):
+class AzureOpenAIModel(BaseModelClient):
     """Azure OpenAI Model class. This class is a wrapper around the Azure OpenAI API. It provides methods for sending
     messages to the model, and retrieving responses from it. It also provides methods for logging retries and sleeping
     before retrying. The class is initialized with an Azure OpenAI API key, version, endpoint, and model name.

@@ -1,13 +1,13 @@
 from typing import List
 import numpy as np
-from core.services.faiss_engine import FaissEngine
-from core.services.document_engine import DocumentEngine
-from core.models.base_model import BaseModel
+from core.services.rag.faiss_engine import FaissEngine
+from core.services.rag.document_engine import DocumentEngine
+from core.models.base_model_client import BaseModelClient
 from pathlib import Path
 
 
 class RAGManager:
-    def __init__(self, model_client: BaseModel, document_processor: DocumentEngine):
+    def __init__(self, model_client: BaseModelClient, document_processor: DocumentEngine):
         """
         Initializes the RAG Manager.
 
@@ -50,7 +50,7 @@ class RAGManager:
         try:
             embeddings_batches = []
             for i in range(0, len(chunks), batch_size):
-                batch = chunks[i: i + batch_size]
+                batch = chunks[i : i + batch_size]
                 emb_resp = self.model_client.embedding(batch)
                 embeddings_batches.extend(emb_resp.embeddings)
 
