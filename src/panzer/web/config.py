@@ -47,7 +47,7 @@ DATABRICKS = "databricks"
 
 CHATS_PATH = "./data/chats"
 ASSETS_PATH = "./web/assets"
-DB_PATH = "../db"
+DB_PATH = "./data/db"
 
 LOGO_CONFIG = {"image": f"{ASSETS_PATH}/surreal-logo-and-text.png", "icon_image": f"{ASSETS_PATH}/surreal-logo.jpg"}
 
