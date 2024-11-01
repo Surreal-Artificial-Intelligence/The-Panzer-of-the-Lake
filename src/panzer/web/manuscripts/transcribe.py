@@ -27,7 +27,7 @@ initialize_session_variables()
 
 
 # @st.cache_resource
-def get_model_client(model_provider: str, model_label: str) -> BaseModel:
+def get_model_client(model_provider: str, model_label: str) -> BaseModelClient:
     """Instantiate and return the model client using the ModelFactory"""
     model_factory = ModelFactory()
     model_client = model_factory.get_model(model_provider, model_label)
