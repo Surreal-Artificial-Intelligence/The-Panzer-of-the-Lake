@@ -3,7 +3,7 @@ from streamlit_extras.colored_header import colored_header
 
 from core.factory.model_factory import ModelFactory
 from core.models.responses.image_response import ImageResponse
-from panzer.core.models.base_model_client import BaseModelClient
+from core.models.base_model_client import BaseModelClient
 from data.tinydb_access import TinyDBAccess
 from core.models.togetherai_model import TogetherAIModel
 
@@ -33,7 +33,7 @@ with st.sidebar:
 
 
 @st.cache_resource
-def get_model_client(model_provider: str, model_label: str) -> BaseModel:
+def get_model_client(model_provider: str, model_label: str) -> BaseModelClient:
     """Instantiate and return the model client using the ModelFactory"""
     model_factory = ModelFactory()
     model_client = model_factory.get_model(model_provider, model_label)
@@ -46,7 +46,7 @@ def get_model_client(model_provider: str, model_label: str) -> BaseModel:
 def generate_image(image_prompt: str):
     """Generate image from prompt using model. Returns a URL"""
     client = get_model_client(model_provider, model_name)
-    response = client.image(prompt=image_prompt)
+    response = client.image(prompt=image_prompt, model_name=model_name)
     return response.image_url
 
 

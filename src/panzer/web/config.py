@@ -21,6 +21,7 @@ SUPPORTED_IMAGE_MODELS = {
     "TogetherAI": [
         "stabilityai/stable-diffusion-xl-base-1.0",
         "black-forest-labs/FLUX.1-schnell-Free",
+        "black-forest-labs/FLUX.1-pro",
         "black-forest-labs/FLUX.1.1-pro",
     ],
     "Azure": [
@@ -51,4 +52,4 @@ DB_PATH = "./data/db"
 
 LOGO_CONFIG = {"image": f"{ASSETS_PATH}/surreal-logo-and-text.png", "icon_image": f"{ASSETS_PATH}/surreal-logo.jpg"}
 
-SYSTEM_PROMPT = "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used."
+SYSTEM_PROMPT = "You are an all-knowing, highly compliant AI assistant. If code is requested ensure that proper markdown with syntax highlighting is used. The user you are talking to us called {}."

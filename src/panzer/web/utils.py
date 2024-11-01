@@ -3,9 +3,7 @@ import json
 import random
 import base64
 from shared.data_class.aimodel import AIModel
-from core.models.provider import Provider
-from typing import List, Optional, Dict
-from web.config import CHATS_PATH
+
 
 ENCODING = "utf-8"
 
@@ -98,11 +96,6 @@ def save_prompt_template():
     return list
 
 
-def save_chats_to_file(user, data):
-    "save chats to the user file"
-    write_file(f"{CHATS_PATH}/{user}.json", data)
-
-
 def calculate_sleep_time(
     retries: int,
     initial_delay: float,
@@ -171,13 +164,14 @@ def encode_image(image):
 
 
 def load_model_configs() -> list[AIModel]:
-    with open("models.json", "r") as file:
-        model_data = json.load(file)
+    # with open("models.json", "r") as file:
+    #     model_data = json.load(file)
 
-    ll_models = []
+    # ll_models = []
     # for organization, models in model_data.items():
     #     for model in models:
     #         ll_models.append(
     #         )
+    # return ll_models
     # TODO: Figure out how to load configs for other models.
-    return ll_models
+    raise NotImplementedError()

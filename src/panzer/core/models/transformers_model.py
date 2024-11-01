@@ -6,11 +6,17 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 
-class TransformersModel(BaseModel):
-    def __init__(self, model_name_or_path: str) -> None:
-        self.model_name_or_path = model_name_or_path
+class TransformersModel(BaseModelClient):
+    def __init__(self) -> None:
+        pass
 
-    def chat(self) -> ModelResponse:
+    def chat(
+        self,
+        model_name: str,
+    ) -> ModelResponse:
+        raise NotImplementedError()
+
+    def models(self):
         raise NotImplementedError()
 
     def load_model(self, model_id) -> None:
@@ -51,8 +57,14 @@ class TransformersModel(BaseModel):
 
         return result  # type: ignore
 
-    def image(self) -> ImageResponse:
+    def image(
+        self,
+        model_name: str,
+    ) -> ImageResponse:
         raise NotImplementedError()
 
-    def embedding(self) -> EmbeddingResponse:
+    def embedding(
+        self,
+        model_name: str,
+    ) -> EmbeddingResponse:
         raise NotImplementedError()

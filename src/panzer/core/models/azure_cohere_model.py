@@ -10,14 +10,15 @@ class CohereAzureModel(BaseModelClient):
     """The CohereAzureModel class is a wrapper around the Cohere Azure API. It provides methods for sending messages to
     the Cohere Azure API and receiving responses from the API."""
 
-    def __init__(self, api_key: str, api_version: str, azure_endpoint: str, model_name: str):
+    def __init__(self, api_key: str, api_version: str, azure_endpoint: str):
         self.api_key = api_key
         self.azure_endpoint = azure_endpoint
         self.api_version = api_version
         if not self.api_key:
             raise ValueError("No API key provided")
 
-        self.model_name = model_name
+    def models(self):
+        raise NotImplementedError()
 
     def test_connection(self):
         """Test the connection to the remote resource"""
@@ -52,6 +53,7 @@ class CohereAzureModel(BaseModelClient):
     def chat(
         self,
         messages,
+        model_name:str,
         **kwargs,
     ) -> ModelResponse:
         """Sends a request to the model with exponential backoff retry policy.

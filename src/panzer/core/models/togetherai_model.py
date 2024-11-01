@@ -15,13 +15,47 @@ class TogetherAIModel(BaseModelClient):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.api_key = api_key
         self.base_url = base_url
-        self.model_name = model_name
 
     def transcribe(self, audio) -> str:
         """Transcribe audio using Open AI whisper v3"""
         raise NotImplementedError()
 
-    def chat(self, messages) -> ModelResponse:
+    def models(self) -> List[AIModel]:
+        """Gets a list of available models"""
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        response = requests.get(f"{self.base_url}/models", headers=headers)
+        models = response.json()
+        model_objects = []
+        for model in models:
+            model_objects.append(
+                AIModel(
+                    id=model["id"],
+                    created=model["created"],
+                    type=model["type"],
+                    display_name=model["display_name"],
+                    organization=model["organization"],
+                    license=model["license"] if "license" in model.keys() else "",
+                    context_length=model["context_length"] if "context_length" in model.keys() else 0,
+                    price_input=model["pricing"]["input"],
+                    price_output=model["pricing"]["output"],
+                )
+            )
+        assert isinstance(model_objects, list)
+        assert isinstance(model_objects[0], AIModel)
+        assert len(model_objects) == len(models)
+
+        return model_objects
+
+    # Rename to ChatResponse
+    def chat(
+        self,
+        model_name: str,
+        messages,
+    ) -> ModelResponse:
         """
         Sends a request to the model with exponential backoff retry policy.
 
@@ -37,7 +71,7 @@ class TogetherAIModel(BaseModelClient):
         """
         response = None
         try:
-            response = self.client.chat.completions.create(model=self.model_name, messages=messages)
+            response = self.client.chat.completions.create(model=model_name, messages=messages)
             return ModelResponse(
                 {"role": "assistant", "content": response.choices[0].message.content or "None"},
                 {
@@ -56,23 +90,23 @@ class TogetherAIModel(BaseModelClient):
                 },
             )
 
-    def image(self, prompt: str) -> ImageResponse:
+    def image(self, model_name: str, prompt: str) -> ImageResponse:
         """Generate an image using the OpenAI library with Together AI"""
         response = None
         try:
             response = self.client.images.generate(
                 prompt=prompt,
-                model=self.model_name,
+                model=model_name,
                 n=1,
             )
             return ImageResponse(image_url=response.data[0].url)
         except Exception as error:
             return ImageResponse(image_url=str(error))
 
-    def embedding(self, texts: List[str]) -> EmbeddingResponse:
+    def embedding(self, model_name: str, texts: List[str]) -> EmbeddingResponse:
         """Generate embedding using the OpenAI library with Together AI"""
 
-        payload = {"model": self.model_name, "input": texts}
+        payload = {"model": model_name, "input": texts}
 
         headers = {
             "accept": "application/json",

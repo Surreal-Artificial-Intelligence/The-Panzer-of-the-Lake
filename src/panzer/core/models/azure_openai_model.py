@@ -17,7 +17,6 @@ class AzureOpenAIModel(BaseModelClient):
         self,
         api_key: str,
         api_version: str,
-        model_name: str,
         azure_endpoint: str,
         image_endpoint: Optional[str] = None,
         **kwargs,
@@ -25,8 +24,6 @@ class AzureOpenAIModel(BaseModelClient):
         self.api_key = api_key
         self.api_version = api_version
         self.azure_endpoint = azure_endpoint
-        self.client = AzureOpenAI(api_key=api_key, api_version=api_version, azure_endpoint=azure_endpoint, **kwargs)
-        self.model_name = model_name
 
         self.default_headers = kwargs.get("default_headers", {})
 
@@ -34,53 +31,65 @@ class AzureOpenAIModel(BaseModelClient):
         self.image_client = None
 
     def _initialize_image_client(self):
-        if self.image_client is None:
-            if not self.image_endpoint:
-                raise ValueError("Azure OpenAI image endpoint is required")
-            self.image_client = AzureOpenAI(
-                api_key=self.api_key,
-                api_version=self.api_version,
-                azure_endpoint=self.image_endpoint,
-                default_headers=self.default_headers,
-            )
+        if not self.image_endpoint:
+            raise ValueError("Azure OpenAI image endpoint is required")
+        self.image_client = AzureOpenAI(
+            api_key=self.api_key,
+            api_version=self.api_version,
+            azure_endpoint=self.image_endpoint,
+            default_headers=self.default_headers,
+        )
+
+    def models(self):
+        raise NotImplementedError()
 
     def chat(
         self,
         messages,
+        model_name: str,
         **kwargs,
     ) -> ModelResponse:
-        try:
-            if self.model_name == "o1-preview":
-                response = self.client.chat.completions.create(model=self.model_name, messages=messages[1:])
-            else:
-                response = self.client.chat.completions.create(model=self.model_name, messages=messages)
-            return ModelResponse(
-                {"role": "assistant", "content": response.choices[0].message.content or "None"},
-                {
-                    "completion_tokens": response.usage.completion_tokens if response.usage else 0,
-                    "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                    "total_tokens": response.usage.total_tokens if response.usage else 0,
-                },
-            )
-        except Exception as error:
-            return ModelResponse(
-                {"role": "assistant", "content": str(error)},
-                {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
-            )
+        client = AzureOpenAI(
+            api_key=self.api_key,
+            api_version=self.api_version,
+            azure_endpoint=self.azure_endpoint.format(model_name),
+            **kwargs,
+        )
 
-    def embedding(self, text, model="text-embedding-ada-002") -> EmbeddingResponse:
-        return EmbeddingResponse(np.array(self.client.embeddings.create(input=[text], model=model).data[0].embedding))
+        if model_name == "o1-preview":
+            response = client.chat.completions.create(model=model_name, messages=messages[1:])
+        else:
+            response = client.chat.completions.create(model=model_name, messages=messages)
+        return ModelResponse(
+            {"role": "assistant", "content": response.choices[0].message.content or "None"},
+            {
+                "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                "total_tokens": response.usage.total_tokens if response.usage else 0,
+            },
+        )
 
-    def image(self, prompt: str) -> ImageResponse:
+    def embedding(
+        self,
+        text,
+        model="text-embedding-ada-002",
+        **kwargs,
+    ) -> EmbeddingResponse:
+        client = AzureOpenAI(
+            api_key=self.api_key,
+            api_version=self.api_version,
+            azure_endpoint=self.azure_endpoint.format(model),
+            **kwargs,
+        )  # TODO: Test that it works (RAG implementation)
+        return EmbeddingResponse(np.array(client.embeddings.create(input=[text], model=model).data[0].embedding))
+
+    def image(self, model_name: str, prompt: str) -> ImageResponse:
         self._initialize_image_client()
-        try:
-            if self.image_client:
-                response = self.image_client.images.generate(
-                    prompt=prompt, model=self.model_name, quality="hd", response_format="url", style="vivid"
-                )
-            else:
-                raise ValueError("Image client initialization failed")
+        if self.image_client:
+            response = self.image_client.images.generate(
+                prompt=prompt, model=model_name, quality="hd", response_format="url", style="vivid"
+            )
+        else:
+            raise ValueError("Image client initialization failed")
 
-            return ImageResponse(response.data[0].url)
-        except Exception as error:
-            raise error
+        return ImageResponse(response.data[0].url)

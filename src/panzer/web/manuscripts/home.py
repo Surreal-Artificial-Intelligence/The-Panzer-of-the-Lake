@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from streamlit_extras.colored_header import colored_header
+from datetime import datetime
 
 
 from core.services.rag.rag_manager import RAGManager
@@ -10,10 +11,13 @@ from core.factory.model_factory import ModelFactory
 from core.models.responses.model_response import ModelResponse
 from core.models.base_model_client import BaseModelClient
 from data.tinydb_access import TinyDBAccess
+from shared.data_class.chat_user import ChatUser
+from shared.data_class.chat_thread import ChatThread
+from shared.data_class.chat_message import ChatMessage
 
-from web.config import SUPPORTED_MODELS, ASSETS_PATH, CHATS_PATH, DB_PATH, SYSTEM_PROMPT
+from web.config import SUPPORTED_MODELS, ASSETS_PATH, DB_PATH, SYSTEM_PROMPT
 
-from web.utils import save_chats_to_file, load_data, encode_image
+from web.utils import encode_image
 
 
 maincol1, maincol2 = st.columns((10, 3))
@@ -38,15 +42,15 @@ with maincol2:
 
 
 @st.cache_resource
-def get_model_client(model_provider: str, model_label: str) -> BaseModel:
+def get_model_client(model_provider: str) -> BaseModelClient:
     """Instantiate and return the model client using the ModelFactory"""
     model_factory = ModelFactory()
-    return model_factory.get_model(model_provider, model_label)
+    return model_factory.get_model(model_provider)
 
 
 @st.cache_resource
-def get_rag_manager(model_provider, model_label):
-    model = get_model_client(model_provider, model_label)
+def get_rag_manager(model_provider: str):
+    model = get_model_client(model_provider)
     return RAGManager(model, DocumentEngine(500, 10))
 
 
@@ -56,10 +60,10 @@ def get_tinydb_client(db_path: str) -> TinyDBAccess:
     client = TinyDBAccess(db_path)
     return client
 
+tinydb_client = get_tinydb_client(DB_PATH)
 
 def initialize_session_variables() -> None:
     """Initializes session variables and loads user data."""
-    tinydb_client = get_tinydb_client(DB_PATH)
 
     if "DB_PATH" not in st.session_state:
         st.session_state["DB_PATH"] = DB_PATH
@@ -67,22 +71,17 @@ def initialize_session_variables() -> None:
     if "user" not in st.session_state:
         st.session_state["user"] = "Emile"
 
-    if "chat_history" not in st.session_state:
-        st.session_state["chat_history"] = {
-            "title": "",
-            "content": [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT,
-                }
-            ],
-        }
+    tinydb_client.initialize_database(st.session_state["user"])
 
-    if "chats" not in st.session_state:
-        st.session_state["chats"] = load_data("Emile", CHATS_PATH)
+    if "user_chats" not in st.session_state:
+        st.session_state["user_chats"] = tinydb_client.load_chat_user(st.session_state["user"])
+
+    if "chat_thread" not in st.session_state:
+        st.session_state["chat_thread"] = ChatThread(
+            title="", created_date=str(datetime.now()), usage=0, messages=[ChatMessage("system", SYSTEM_PROMPT.format(st.session_state["user"]))]
+        )
 
     if "templates" not in st.session_state:
-        tinydb_client.initialize_database(st.session_state["user"])
         st.session_state["templates"] = tinydb_client.load_templates(st.session_state["user"])
 
     if "model" not in st.session_state:
@@ -106,59 +105,53 @@ def initialize_session_variables() -> None:
 initialize_session_variables()
 
 
-def quicksave_chat():
+def update_chat_user():
     """
-    Saves the current chat that is in chat history into the all user chats variable.
-    Basically a quicksave function.
+    Saves the current thread into the chat-user object
+    A quicksave function.
     """
-    if st.session_state["chat_history"] not in st.session_state["chats"]["chats"]:
-        st.session_state["chats"]["chats"].append(st.session_state["chat_history"])
+    if st.session_state["chat_thread"] not in st.session_state["user_chats"].chats:
+        st.session_state["user_chats"].chats.append(st.session_state["chat_thread"])
     else:
         # overwrite existing one
-        for i, item in enumerate(st.session_state["chats"]["chats"]):
-            if item == st.session_state["chat_history"]:
-                st.session_state["chats"]["chats"][i] = st.session_state["chat_history"]
+        for i, item in enumerate(st.session_state["user_chats"].chats):
+            if item == st.session_state["chat_thread"]:
+                st.session_state["user_chats"].chats[i] = st.session_state["chat_thread"]
                 break
 
 
-def reset_stats():
-    """Sets chat statistics to zero"""
-    st.session_state["total_tokens_used"] = 0
-
-
-def render_chats():
+def render_chats(chat_thread: ChatThread):
     """Renders chats in bubbles in the UI"""
     chat_container.empty()
     with maincol1:
         with chat_container:
-            for item in st.session_state["chat_history"]["content"][1:]:
-                if item["role"] == "assistant":
-                    with st.chat_message(item["role"], avatar=f"{ASSETS_PATH}/tank.jpeg"):
-                        st.markdown(item["content"])
+            for item in chat_thread.messages[1:]:
+                if item.role == "assistant":
+                    with st.chat_message(item.role, avatar=f"{ASSETS_PATH}/tank.jpeg"):
+                        st.markdown(item.content)
                 else:
-                    with st.chat_message(item["role"], avatar=f"{ASSETS_PATH}/soldier.jpg"):
-                        st.markdown(item["content"])
+                    with st.chat_message(item.role, avatar=f"{ASSETS_PATH}/soldier.jpg"):
+                        st.markdown(item.content)
 
 
-def populate_chats(user_chats):
+def populate_chats(user_chats: ChatUser):
     """Loads conversation from file memory"""
-
     def load_conversation(i: int):
-        st.session_state["chat_history"] = user_chats["chats"][i]
-        render_chats()
+        st.session_state["chat_thread"] = user_chats.chats[i]
+        render_chats(st.session_state["chat_thread"])
 
     def delete_conversation(i: int):
-        del user_chats["chats"][i]
-        save_chats_to_file(st.session_state["chats"]["user"], user_chats)
+        del user_chats.chats[i]
+        tinydb_client.upsert_chat_user(user_chats)
 
-    for i, item in enumerate(user_chats["chats"]):
+    for i, chat_thread in enumerate(user_chats.chats):
         chat_tile_container = st.container()
-        col_delete, colpace, col_load = st.columns((1, 2, 1))
+        col_delete, colspace, col_load = st.columns((1, 2, 1))
         with chat_tile_container:
-            if item:
+            if chat_thread:
                 colored_header(
                     label="",
-                    description=item["content"][1]["content"][:70],
+                    description=chat_thread.messages[1].content[:70],
                     color_name="blue-green-70",
                 )
                 col_load.button(
@@ -181,10 +174,6 @@ def populate_chats(user_chats):
                 )
 
 
-def update_chat_history(chat_content: dict):
-    """Appends new content to the chat history session variable"""
-    st.session_state["chat_history"]["content"].append(chat_content)
-    return
 
 
 @st.dialog("Attach your media.")
@@ -218,7 +207,7 @@ with st.sidebar:
     side_chats_container = st.container()
     side_chats_container.empty()
     with side_chats_container:
-        populate_chats(st.session_state["chats"])
+        populate_chats(st.session_state["user_chats"])
 
 
 def evaluate_image(templated_message: str, image_type: str):
@@ -243,19 +232,25 @@ def evaluate_image(templated_message: str, image_type: str):
     return message_data
 
 
-def validate_model_response(model_response: ModelResponse):
+
+def handle_model_response(model_response: ModelResponse):
     if not model_response.usage or not model_response.message:
         raise ValueError(
             "Invalid model response: missing 'usage' or 'message'. Check what the specific model class is returning"
         )
 
-
-def handle_model_response(model_response: ModelResponse):
     if model_response.usage["total_tokens"] == 0:
         st.error(model_response.message["content"])
     else:
         st.session_state["total_tokens_used"] = model_response.usage["total_tokens"]
-        update_chat_history(model_response.message)
+        update_conversation(ChatMessage(role=model_response.message["role"], content=model_response.message["content"],))
+
+
+def update_conversation(chat_content: ChatMessage):
+    """Appends new content to the chat_user session object for both assistant and user roles"""
+    st.session_state["chat_thread"].messages.append(chat_content)
+    return
+
 
 # TODO; make a streamlit agnostic implementation
 def process_file(file: UploadedFile, tmessage: str) -> dict:
@@ -283,7 +278,7 @@ def process_file(file: UploadedFile, tmessage: str) -> dict:
             )
 
     elif file.type in ["application/pdf"]:
-        ragman = get_rag_manager(model_provider, model_name)
+        ragman = get_rag_manager(model_provider)
         # TODO: need to add passing in file
         ragman.process_document(file)
 
@@ -304,19 +299,18 @@ def process_query(query_string: str) -> str:
                 message_data = process_file(st.session_state["file"], templated_message)
 
                 # so that massive encodings don't destroy the db
-                working_chat_hist = st.session_state["chat_history"]["content"].copy()
+                working_chat_hist = st.session_state["chat_thread"].messages.copy()
                 working_chat_hist.append(message_data)
 
-            update_chat_history({"role": "user", "content": templated_message})
-            render_chats()
-
-            client = get_model_client(model_provider, model_name)
-            model_response = client.chat(working_chat_hist if working_chat_hist else st.session_state["chat_history"]["content"])
-            validate_model_response(model_response)
+            update_conversation(ChatMessage(role="user", content=templated_message))
+            render_chats(st.session_state["chat_thread"])
+            client = get_model_client(model_provider)
+            chats = working_chat_hist if working_chat_hist else st.session_state["chat_thread"].messages_to_dict()
+            model_response = client.chat(model_name, chats)
             handle_model_response(model_response)
 
-            quicksave_chat()
-            save_chats_to_file(st.session_state["chats"]["user"], st.session_state["chats"])
+            update_chat_user() # update local chat user
+            tinydb_client.upsert_chat_user(st.session_state["user_chats"])
 
             # if voice_enabled:
             #     status.update(label="Weaving resonance...", state="running", expanded=False)

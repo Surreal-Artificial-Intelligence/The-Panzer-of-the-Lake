@@ -17,6 +17,9 @@ class GenericHttpsModel(BaseModelClient):
         self.api_version = api_version
         self.model_name = model_name
 
+    def models(self):
+        raise NotImplementedError()
+
     def test_connection(self):
         """Test the connection to the remote resource"""
         data = {

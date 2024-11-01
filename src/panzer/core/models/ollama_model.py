@@ -7,16 +7,29 @@ from core.models.responses.embedding_response import EmbeddingResponse
 from core.models.base_model_client import BaseModelClient
 
 
-class OllamaModel(BaseModel):
-    def __init__(self, endpoint: str, model_name: str):
-        self.model_name = model_name
+class OllamaModel(BaseModelClient):
+    def __init__(
+        self,
+        endpoint: str,
+    ):
         self.endpoint = endpoint
 
     def test_connection(self):
         pass
 
+    def models(self):
+        raise NotImplementedError()
+
     def chat(
-        self, messages, max_retries=10, initial_delay=1, backoff_factor=2, jitter=0.1, max_delay=64, **kwargs
+        self,
+        messages,
+        model_name: str,
+        max_retries=10,
+        initial_delay=1,
+        backoff_factor=2,
+        jitter=0.1,
+        max_delay=64,
+        **kwargs,
     ) -> ModelResponse:
         """
         Sends a request to the model with exponential backoff retry policy.
@@ -49,7 +62,7 @@ class OllamaModel(BaseModel):
         while retries < max_retries:
             try:
                 data = {
-                    "model": self.model_name,
+                    "model": model_name,
                     "stream": False,
                     "messages": messages[1:],  # does not have system role
                 }
@@ -88,9 +101,14 @@ class OllamaModel(BaseModel):
             {"completion_tokens": 1, "prompt_tokens": 2, "total_tokens": 4},
         )
 
-    def image(self) -> ImageResponse:
+    def image(
+        self,
+        model_name: str,
+    ) -> ImageResponse:
         raise NotImplementedError()
 
-    def embedding(self) -> EmbeddingResponse:
+    def embedding(
+        self,
+        model_name: str,
+    ) -> EmbeddingResponse:
         raise NotImplementedError()
-
